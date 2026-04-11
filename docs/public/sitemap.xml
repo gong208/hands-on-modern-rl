@@ -121,8 +121,38 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/cartpole-dqn/</loc>
+    <lastmod>2026-04-11T07:48:59.648Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/dqn-components/</loc>
+    <lastmod>2026-04-11T08:28:48.210Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/dqn-family/</loc>
+    <lastmod>2026-04-11T09:04:02.945Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/from-q-to-dqn/</loc>
+    <lastmod>2026-04-11T08:27:47.385Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/intro/</loc>
-    <lastmod>2026-04-11T03:24:11.769Z</lastmod>
+    <lastmod>2026-04-11T07:42:52.207Z</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter04_dqn/training-analysis/</loc>
+    <lastmod>2026-04-11T09:04:50.216Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -218,7 +248,7 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/preface/intro/</loc>
-    <lastmod>2026-04-11T04:14:10.925Z</lastmod>
+    <lastmod>2026-04-11T07:35:01.050Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>

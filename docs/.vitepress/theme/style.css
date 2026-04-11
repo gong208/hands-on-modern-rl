@@ -141,3 +141,21 @@
 .katex-html {
   display: inline-block;
 }
+
+/* Fix MathJax 3 assistive math duplication when styles are stripped */
+mjx-assistive-mml {
+  position: absolute !important;
+  clip: rect(1px, 1px, 1px, 1px);
+  padding: 0 !important;
+  border: 0 !important;
+  height: 1px !important;
+  width: 1px !important;
+  overflow: hidden !important;
+  display: block !important;
+}
+
+mjx-container[display="true"] {
+  display: block;
+  text-align: center;
+  margin: 1em 0;
+}

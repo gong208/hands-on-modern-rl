@@ -84,8 +84,24 @@ const zhSidebar = {
     {
       text: 'Part 1: 极速入门',
       items: [
-        { text: '第1章：RL初印象', link: '/chapter01_cartpole/intro' },
-        { text: '第2章：现代RL初体验', link: '/chapter02_dpo/intro' }
+        {
+          text: '第1章：RL初印象',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter01_cartpole/intro' },
+            { text: '核心原理', link: '/chapter01_cartpole/principles' },
+            { text: '训练与指标', link: '/chapter01_cartpole/metrics' }
+          ]
+        },
+        {
+          text: '第2章：现代RL初体验',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter02_dpo/intro' },
+            { text: '核心原理', link: '/chapter02_dpo/principles' },
+            { text: '训练与指标', link: '/chapter02_dpo/metrics' }
+          ]
+        }
       ]
     },
     {
@@ -109,7 +125,18 @@ const zhSidebar = {
             { text: '经典方法与路线图', link: '/chapter03_mdp/classic-methods' }
           ]
         },
-        { text: '第4章：DQN 与游戏控制', link: '/chapter04_dqn/intro' },
+        {
+          text: '第4章：DQN 与游戏控制',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter04_dqn/intro' },
+            { text: '从 Q-Learning 到 DQN', link: '/chapter04_dqn/from-q-to-dqn' },
+            { text: 'DQN 三大组件', link: '/chapter04_dqn/dqn-components' },
+            { text: '动手：DQN 玩 CartPole', link: '/chapter04_dqn/cartpole-dqn' },
+            { text: '观察训练过程', link: '/chapter04_dqn/training-analysis' },
+            { text: 'DQN 家族与视角迁移', link: '/chapter04_dqn/dqn-family' }
+          ]
+        },
         {
           text: '第5章：策略梯度与 Actor-Critic',
           collapsed: false,
