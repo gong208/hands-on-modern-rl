@@ -101,7 +101,8 @@ const zhSidebar = {
             { text: '核心原理', link: '/chapter02_dpo/principles' },
             { text: '训练与指标', link: '/chapter02_dpo/metrics' }
           ]
-        }
+        },
+        { text: 'Part 1 总结', link: '/summaries/part1-summary' }
       ]
     },
     {
@@ -171,10 +172,25 @@ const zhSidebar = {
             {
               text: '基线实验与总结',
               link: '/chapter05_policy_gradient/baseline-experiment'
+            },
+            {
+              text: '动手：AlphaGo 简单复现',
+              link: '/chapter05_policy_gradient/alphago'
             }
           ]
         },
-        { text: '第6章：PPO 与奖励模型', link: '/chapter06_ppo/intro' }
+        {
+          text: '第6章：PPO 与奖励模型',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter06_ppo/intro' },
+            { text: '动手：PPO 训练 LunarLander', link: '/chapter06_ppo/ppo-lunar-lander' },
+            { text: 'PPO 数学推导', link: '/chapter06_ppo/ppo-math' },
+            { text: '信任域与裁剪机制', link: '/chapter06_ppo/trust-region-clipping' },
+            { text: 'GAE、奖励模型与 LLM 对齐', link: '/chapter06_ppo/gae-reward-model' }
+          ]
+        },
+        { text: 'Part 2 总结', link: '/summaries/part2-summary' }
       ]
     },
     {
@@ -182,12 +198,26 @@ const zhSidebar = {
       items: [
         {
           text: '第7章：对齐方法族（DPO / KTO / SimPO）',
-          link: '/chapter07_alignment/intro'
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter07_alignment/intro' },
+            { text: '动手：DPO 对齐实验', link: '/chapter07_alignment/dpo-hands-on' },
+            { text: 'DPO 数学推导与隐式奖励', link: '/chapter07_alignment/dpo-math' },
+            { text: 'DPO 家族与选型指南', link: '/chapter07_alignment/dpo-family' }
+          ]
         },
         {
           text: '第8章：GRPO、DAPO 与 RLVR',
-          link: '/chapter08_grpo_rlvr/intro'
-        }
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter08_grpo_rlvr/intro' },
+            { text: '动手：GRPO 训练数学推理', link: '/chapter08_grpo_rlvr/grpo-hands-on' },
+            { text: 'GRPO 核心机制', link: '/chapter08_grpo_rlvr/grpo-mechanism' },
+            { text: 'DeepSeek、DAPO 与 RLVR', link: '/chapter08_grpo_rlvr/deepseek-dapo-rlvr' },
+            { text: 'RL Scaling 与前沿展望', link: '/chapter08_grpo_rlvr/rl-scaling-outlook' }
+          ]
+        },
+        { text: 'Part 3 总结', link: '/summaries/part3-summary' }
       ]
     },
     {
@@ -201,37 +231,161 @@ const zhSidebar = {
             {
               text: '动手：PyBullet 机器人仿真',
               link: '/chapter09_continuous_control/pybullet-hands-on'
+            },
+            {
+              text: '连续策略与 DDPG/TD3',
+              link: '/chapter09_continuous_control/continuous-policy-ddpg-td3'
+            },
+            {
+              text: 'SAC、算法对比与并行采样',
+              link: '/chapter09_continuous_control/sac-comparison'
+            },
+            {
+              text: 'HER：把失败变成成功',
+              link: '/chapter09_continuous_control/her-sparse-reward'
+            },
+            {
+              text: '扩散策略：生成式连续控制',
+              link: '/chapter09_continuous_control/diffusion-policy'
             }
           ]
         },
-        { text: '第10章：RLHF 完整流水线', link: '/chapter10_rlhf/intro' },
-        { text: '第11章：VLM 强化学习', link: '/chapter11_vlm_rl/intro' },
-        { text: '第12章：Agentic RL', link: '/chapter12_agentic_rl/intro' },
+        {
+          text: '第10章：RLHF 完整流水线',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter10_rlhf/intro' },
+            {
+              text: '模仿学习与数据工程',
+              link: '/chapter10_rlhf/imitation-learning-pipeline'
+            },
+            {
+              text: '奖励函数设计',
+              link: '/chapter10_rlhf/reward-function-design'
+            },
+            {
+              text: '训练稳定性与奖励黑客',
+              link: '/chapter10_rlhf/training-stability-hacking'
+            },
+            {
+              text: 'RLAIF 与自我博弈',
+              link: '/chapter10_rlhf/rlaif-self-play'
+            }
+          ]
+        },
+        {
+          text: '第11章：VLM 强化学习',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter11_vlm_rl/intro' },
+            {
+              text: '动手：GRPO 训练 VLM',
+              link: '/chapter11_vlm_rl/vlm-grpo-hands-on'
+            },
+            {
+              text: 'VLM RL 的特殊挑战',
+              link: '/chapter11_vlm_rl/vlm-challenges'
+            },
+            {
+              text: 'VLM RL 框架与前沿',
+              link: '/chapter11_vlm_rl/vlm-frameworks'
+            }
+          ]
+        },
+        {
+          text: '第12章：Agentic RL',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/chapter12_agentic_rl/intro' },
+            {
+              text: '多轮交互 RL 与信用分配',
+              link: '/chapter12_agentic_rl/multi-turn-rl'
+            },
+            {
+              text: '轨迹合成与数据工程',
+              link: '/chapter12_agentic_rl/trajectory-synthesis'
+            },
+            {
+              text: '工具调用 RL：Web Agent 与 Code Agent',
+              link: '/chapter12_agentic_rl/tool-use-agents'
+            },
+            {
+              text: 'Agentic RL 工程实战与总结',
+              link: '/chapter12_agentic_rl/agentic-engineering'
+            }
+          ]
+        },
         {
           text: '第13章：未来趋势',
           collapsed: false,
           items: [
             { text: '章节导览', link: '/chapter13_future_trends/intro' },
             {
+              text: '测试时计算与 RL 推理',
+              link: '/chapter13_future_trends/test-time-reasoning'
+            },
+            {
+              text: '多模态与具身智能',
+              link: '/chapter13_future_trends/embodied-multimodal'
+            },
+            {
+              text: '多智能体 RL 与基于模型的 RL',
+              link: '/chapter13_future_trends/marl-model-based'
+            },
+            {
+              text: '自博弈、自进化与学习路线',
+              link: '/chapter13_future_trends/self-play-outlook'
+            },
+            {
+              text: '离线强化学习（CQL / IQL / DT）',
+              link: '/chapter13_future_trends/offline-rl'
+            },
+            {
               text: '动手：PettingZoo 多智能体',
               link: '/chapter13_future_trends/pettingzoo'
             }
           ]
-        }
+        },
+        { text: 'Part 4 总结', link: '/summaries/part4-summary' }
       ]
     },
     {
       text: '附录',
       items: [
         {
-          text: '附录A：常见坑与解法',
-          link: '/appendix_common_pitfalls/intro'
+          text: '附录A：强化学习训练调试指南',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/appendix_common_pitfalls/intro' },
+            { text: '策略崩溃与奖励投机', link: '/appendix_common_pitfalls/policy-collapse-reward-hacking' },
+            { text: '资源溢出与收敛失效', link: '/appendix_common_pitfalls/oom-nonconvergence' }
+          ]
         },
         {
-          text: '附录B：工业级训练与评测',
-          link: '/appendix_industrial_training/intro'
+          text: '附录B：RL 工程实践指南',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/appendix_industrial_training/intro' },
+            { text: 'RL 基础设施纵览', link: '/appendix_industrial_training/rl-infrastructure' },
+            { text: '异步 RL 训练架构深潜', link: '/appendix_industrial_training/rl-infrastructure-async' },
+            { text: '分布式训练架构', link: '/appendix_industrial_training/distributed-training' },
+            { text: '评测体系与 Badcase 分析', link: '/appendix_industrial_training/evaluation-badcase' },
+            { text: '训练监控与工业实战', link: '/appendix_industrial_training/monitoring-practice' }
+          ]
         },
-        { text: '附录C：算法速查', link: '/appendix_algorithm_guide/intro' }
+        {
+          text: '附录C：算法选型与工程框架',
+          collapsed: false,
+          items: [
+            { text: '章节导览', link: '/appendix_algorithm_guide/intro' },
+            { text: '算法选型决策', link: '/appendix_algorithm_guide/algorithm-selection' },
+            { text: '训练框架与模型基方法', link: '/appendix_algorithm_guide/framework-mbrl' }
+          ]
+        },
+        { text: '附录D：强化学习经典项目', link: '/appendix_game_projects/intro' },
+        { text: '附录E：数学基础', link: '/appendix_math/intro' },
+        { text: '附录F：参考文献', link: '/appendix_papers/intro' },
+        { text: '附录G：术语对照表', link: '/appendix_terminology/intro' }
       ]
     }
   ]
