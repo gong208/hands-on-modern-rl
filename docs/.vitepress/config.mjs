@@ -357,6 +357,10 @@ const zhSidebar = {
               link: '/chapter12_agentic_rl/industrial-practice'
             },
             {
+              text: 'Agentic 评测体系与 Benchmark 全景',
+              link: '/chapter12_agentic_rl/evaluation-benchmarks'
+            },
+            {
               text: '深度研究智能体：Deep Research Agent',
               link: '/chapter12_agentic_rl/deep-research-agent'
             },
