@@ -257,4 +257,116 @@ flowchart TD
 
 工业界的最佳实践是**混合使用**：先用 RLHF 建立高质量的种子数据集和基准 RM，再用 RLAIF 做大规模扩展。定期用人类评估来校准 AI Judge 的判断质量，确保方向没有偏。数据闭环的运转效率，往往比单次训练的算法选择更重要——这也是为什么本章花大量篇幅讨论数据工程的原因。
 
+## 10.4.5 自我进化循环：Self-Reward → Self-Critic → 自我改进
+
+前面讨论的 RLAIF、CAI 和 Self-Play 已经分别展示了"AI 替代人类"的不同切面。当这些技术组合在一起时，就形成了一个完整的**自我进化循环**——模型不需要人类介入就能持续提升：
+
+```mermaid
+flowchart TD
+    G["模型生成\n多个回答"] --> SR["Self-Reward\n模型自评打分"]
+    SR --> SC["Self-Critic\n模型自我批评"]
+    SC --> F["过滤与筛选\n保留高质量数据"]
+    F --> T["DPO / GRPO\n训练更新"]
+    T --> G2["更新后的模型"]
+    G2 -->|"下一轮迭代"| G
+
+    style G fill:#e3f2fd,stroke:#1976d2
+    style SR fill:#fff3e0,stroke:#e65100
+    style SC fill:#f3e5f5,stroke:#6a1b9a
+    style T fill:#e8f5e9,stroke:#2e7d32
+```
+
+这个循环的关键在于**每一轮都能产出比上一轮更好的数据**。Meta 的 Self-Rewarding LMs 实验验证了这个可行性：经过 3 轮迭代后，Llama 2 70B 在 AlpacaEval 上的胜率从 10% 跃升至 73%。SPPO（Self-Play Preference Optimization）进一步将 Self-Play 机制融入其中，让模型与自己的历史版本竞争。（这两个方法在[第 7 章的 DPO 家族](../chapter07_alignment/dpo-family)中有更详细的介绍。）
+
+### 工程实践：防止自我进化变成自我退化
+
+自我进化循环最大的风险是**多样性退化**（Mode Collapse）。如果模型在某一轮给自己"冗长但正确"的回答打高分，下一轮就会生成更多冗长回答，然后再给自己高分……最终模型可能只会写一种风格的回答。
+
+实践中，以下策略可以有效缓解：
+
+**1. 外部锚点校准。** 每隔 K 轮迭代，用人类标注做一次"方向检查"。不需要大量标注——几十到几百条就足以判断模型是否偏离了正确方向。如果偏离，暂停自迭代，用人工数据做一次"纠偏训练"。
+
+**2. 多维度评分。** 不要只让模型打一个总分，而是从多个维度（准确性、帮助性、安全性、清晰度）分别评分。这可以防止单一维度的偏好主导整个训练。
+
+**3. 多样性约束。** 在构造偏好对时，确保 chosen 和 rejected 的回答在风格、长度、角度上有足够的差异。如果所有候选回答都太相似，这轮数据应该被丢弃而不是用来训练。
+
+**4. 奖励模型作为护栏。** 即使在 Self-Reward 模式下，仍然保留一个外部训练的 Reward Model 作为"安全检查"——如果 Self-Reward 给出的分数和外部 RM 的评分严重不一致，说明模型的自评能力可能出了问题。
+
+```python
+# ==========================================
+# 自我进化循环：带护栏的迭代训练
+# ==========================================
+
+def self_evolution_loop(model, prompts, external_rm, num_iterations=3):
+    """带外部护栏的自我进化循环"""
+    for iteration in range(num_iterations):
+        # 1. Self-Reward：模型自评
+        preference_data = []
+        for prompt in prompts:
+            responses = [model.generate(prompt) for _ in range(4)]
+            scores = [model.self_score(prompt, r) for r in responses]
+
+            # 多维度评分，防止单一维度主导
+            dimensions = ['accuracy', 'helpfulness', 'clarity', 'safety']
+            multi_scores = [
+                {d: model.score_dimension(prompt, r, d) for d in dimensions}
+                for r in responses
+            ]
+            total_scores = [
+                sum(s.values()) / len(s) for s in multi_scores
+            ]
+
+            best = responses[max(range(len(total_scores)),
+                                 key=lambda i: total_scores[i])]
+            worst = responses[min(range(len(total_scores)),
+                                  key=lambda i: total_scores[i])]
+
+            preference_data.append({
+                'prompt': prompt, 'chosen': best, 'rejected': worst
+            })
+
+        # 2. 外部护栏：用 RM 校准
+        calibration_errors = 0
+        for pair in preference_data:
+            rm_chosen = external_rm.score(pair['prompt'], pair['chosen'])
+            rm_rejected = external_rm.score(pair['prompt'], pair['rejected'])
+            if rm_chosen < rm_rejected:  # RM 和 Self-Reward 不一致
+                calibration_errors += 1
+
+        error_rate = calibration_errors / len(preference_data)
+        if error_rate > 0.3:  # 超过 30% 不一致，暂停迭代
+            print(f"迭代 {iteration}: 校准错误率 {error_rate:.1%}，暂停自迭代")
+            break
+
+        # 3. Self-Critic：批评并修订
+        for pair in preference_data:
+            critique = model.self_critique(
+                pair['prompt'], pair['chosen']
+            )
+            pair['chosen_revised'] = model.self_revise(
+                pair['prompt'], pair['chosen'], critique
+            )
+
+        # 4. DPO 训练
+        model = dpo_train(model, preference_data)
+        print(f"迭代 {iteration + 1} 完成")
+
+    return model
+```
+
+自我进化循环不是万能的——它更适合**已经具备基本能力**的模型。如果模型的基础能力太差（比如经常生成胡言乱语），它的自评能力也不可靠，自我进化循环就无从谈起。在实践中，通常先用 RLHF 或 SFT 将模型训练到一个合理的基线水平，然后再启动自我进化循环来做"锦上添花"。
+
+<details>
+<summary>思考题：Self-Rewarding 的自我进化循环，和[第 8 章的 GRPO + RLVR](../chapter08_grpo_rlvr/intro) 有什么本质区别？</summary>
+
+两者的核心区别在于**奖励信号的来源**：
+
+- **[GRPO](../chapter08_grpo_rlvr/grpo-mechanism) + [RLVR](../chapter08_grpo_rlvr/deepseek-dapo-rlvr)** 的奖励来自**外部验证器**（数学答案是否正确、代码是否通过测试）。这个信号是客观的、可验证的，不依赖模型自己的判断。它的天花板取决于验证器的设计质量。
+
+- **Self-Rewarding** 的奖励来自**模型自身**。这个信号是主观的，模型既是"选手"又是"裁判"。它的上限取决于模型的"元认知"能力——能否准确评估自己输出的质量。
+
+在实践中，RLVR 适合有客观答案的领域（数学、代码、推理），Self-Rewarding 适合没有客观标准的主观领域（创意写作、对话质量、帮助性）。最优方案往往是两者的混合：客观可验证的部分用 RLVR，主观评价的部分用 Self-Rewarding。
+
+</details>
+
 到这里，我们从理论基础到数据工程、从奖励函数到训练稳定性、从奖励黑客到 RLAIF，完整走遍了 RLHF 的工程全景。下一章，我们将视角从纯文本拓展到多模态——看看当输入不只是文字还包括图像时，RL 会面临什么新的挑战。让我们进入第 11 章——[VLM 强化学习](../chapter11_vlm_rl/intro)。
