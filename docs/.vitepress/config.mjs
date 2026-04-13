@@ -112,7 +112,7 @@ const zhSidebar = {
       text: '第二篇：核心理论与方法',
       items: [
         {
-          text: '第3章：MDP 与大模型语境',
+          text: '第3章：RL 理论基石：状态、动作与价值',
           collapsed: false,
           items: [
             { text: '章节导览', link: '/chapter03_mdp/intro' },

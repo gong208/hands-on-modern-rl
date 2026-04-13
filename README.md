@@ -58,7 +58,7 @@
 
 | 章节           | 课题                                                               | 核心内容                                                                                                                                                                 |
 | :------------- | :----------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Chapter 03** | [MDP 与大模型语境](docs/chapter03_mdp/intro.md)                    | 动手实践两台老虎机（Bandit）；引入 MDP 形式化定义与价值函数；推导贝尔曼方程，建立对 TD Error 的直觉；了解经典方法与强化学习路线图。                                      |
+| **Chapter 03** | [RL 理论基石：状态、动作与价值](docs/chapter03_mdp/intro.md)       | 动手实践两台老虎机（Bandit）；引入 MDP 形式化定义与价值函数；推导贝尔曼方程，建立对 TD Error 的直觉；了解经典方法与强化学习路线图。                                      |
 | **Chapter 04** | [深度强化学习 DQN](docs/chapter04_dqn/intro.md)                    | 从经典 Q-Learning 到 DQN 的演进；拆解 DQN 三大组件；通过 CartPole、Atari 像素级输入、ViZDoom 及 stable-retro 宝可梦实战检验算法；观察训练过程，解析 DQN 家族与视角迁移。 |
 | **Chapter 05** | [策略梯度与 Actor-Critic](docs/chapter05_policy_gradient/intro.md) | 从摇骰子赌博机实验出发，推导策略梯度定理与 REINFORCE；引入基线构建 Actor-Critic 架构；完成基线实验总结与 AlphaGo 的简单复现。                                            |
 | **Chapter 06** | [PPO 与奖励模型](docs/chapter06_ppo/intro.md)                      | 动手训练 LunarLander；深入剖析 PPO 数学推导、信任域与裁剪机制；理解 GAE 的优势估计、奖励模型机制及其在 LLM 对齐中的作用。                                                |
