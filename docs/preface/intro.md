@@ -10,7 +10,28 @@
 
 面对这些需要在动态变化中做连续决策的难题，**强化学习（Reinforcement Learning, RL）提供了一套截然不同的思路：不告诉 AI 怎么做，只告诉它什么好、什么不好，剩下的让它自己摸索。**从 Q-Learning 到 DQN，从 PPO 到 DPO 和 GRPO——强化学习的每一次进化，都在不断拓宽人工智能的能力边界。
 
+```mermaid
+graph LR
+    subgraph 监督学习
+        SL_D["数据集<br/>（图片 + 标签）"] --> SL_M["模型"]
+        SL_M --> SL_P["预测"]
+        SL_L["标准答案"] -.->|"对比误差"| SL_M
+    end
+    subgraph 强化学习
+        RL_A["智能体"] -->|"动作"| RL_E["环境"]
+        RL_E -->|"状态 + 奖励"| RL_A
+    end
+    style SL_D fill:#e3f2fd,stroke:#1976d2,color:#000
+    style SL_L fill:#e3f2fd,stroke:#1976d2,color:#000
+    style RL_A fill:#fff3e0,stroke:#f57c00,color:#000
+    style RL_E fill:#fff3e0,stroke:#f57c00,color:#000
+```
+
 本书将带你亲手用代码重走这段旅程。从最基础的倒立摆（CartPole），一路走到如何用 RL 激发大语言模型的推理能力。这不仅是一门技术，更是一种理解智能如何涌现的全新视角。
+
+![CartPole 倒立摆环境：小车通过左右移动来保持杆子竖直平衡](/images/cartpole.gif)
+
+> 图源：[Gymnasium - CartPole](https://gymnasium.farama.org/environments/classic_control/cart_pole/)
 
 ## 什么是强化学习？
 
@@ -42,7 +63,23 @@ graph LR
 
 $$G_t = r_{t+1} + \gamma\, r_{t+2} + \gamma^2\, r_{t+3} + \cdots = \sum_{k=0}^{\infty} \gamma^k\, r_{t+k+1}$$
 
-$\gamma$ 接近 1 表示重视长期回报，接近 0 表示只顾眼前。整个 RL 大厦建立在一个哲学立场——**奖励假设**——之上：所有目标都可以描述为"最大化期望累积奖励"。只要能把"好"和"坏"量化成数字信号，RL 就有办法让智能体学会。
+$\gamma$ 接近 1 表示重视长期回报，接近 0 表示只顾眼前。
+
+```mermaid
+graph LR
+    S["起点 🐭"] -->|"1 步<br/>r = +1"| C1["小奶酪 🧀"]
+    S -->|"4 步<br/>r = +10"| C2["大奶酪 🧀🧀🧀"]
+    C2 -.->|"猫在旁边 🐱"| CAT["危险"]
+
+    style S fill:#fff3e0,stroke:#f57c00,color:#000
+    style C1 fill:#e3f2fd,stroke:#1976d2,color:#000
+    style C2 fill:#fce4ec,stroke:#c62828,color:#000
+    style CAT fill:#fafafa,stroke:#9e9e9e,color:#000
+```
+
+> γ ≈ 0 时智能体倾向直奔小奶酪；γ ≈ 1 时愿意冒险绕路去拿大奶酪。
+
+整个 RL 大厦建立在一个哲学立场——**奖励假设**——之上：所有目标都可以描述为"最大化期望累积奖励"。只要能把"好"和"坏"量化成数字信号，RL 就有办法让智能体学会。
 
 任务类型也有两种：**回合制（Episodic）**有明确的起点和终点（一局超级马里奥、一局 CartPole），**持续性（Continuing）**没有终点（自动化股票交易）。本书的实验都是回合制，方便用"每回合得分"衡量进展。
 
@@ -69,6 +106,25 @@ RL 还面临一个核心困境——**探索与利用（Exploration vs. Exploita
 ## 关于本书
 
 2016 年，AlphaGo 击败李世石，强化学习第一次震撼公众。2022 年 ChatGPT 发布，人们发现 RL 正是让大语言模型从"能说话"变成"说好话"的关键技术。从 DeepSeek-R1 到各类开源对齐模型，RLHF、DPO、GRPO 等算法已经深刻地重塑了整个 AI 行业。
+
+```mermaid
+timeline
+    title 强化学习里程碑
+    2013 : DeepMind 发布 DQN
+         : 深度学习 × RL 的起点
+    2016 : AlphaGo 击败李世石
+         : RL 首次震撼公众
+    2017 : PPO 算法提出
+         : 成为最广泛使用的 RL 算法
+    2020 : RLHF 用于 GPT 系列
+         : RL 进入大语言模型时代
+    2022 : ChatGPT 发布
+         : RLHF 成为行业标配
+    2023 : DPO 提出
+         : 简化对齐流程，绕过奖励模型
+    2025 : DeepSeek-R1 / GRPO
+         : 组相对策略优化，RL + 可验证奖励
+```
 
 然而，市面上的学习资源严重滞后于行业实践。主流教程对 RL 一笔带过，专门的 RL 教材又停留在传统框架，对 PPO、DPO、GRPO 只字不提。一个想要理解 RLHF 流程的工程师，不得不在经典教材和最新论文之间艰难地自行搭建桥梁。我们着手写这本书，就是为了填补这道鸿沟。
 
