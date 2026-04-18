@@ -622,7 +622,7 @@ export default withMermaid(
     ignoreDeadLinks: true,
     head: [
       ['link', { rel: 'icon', href: `${base}favicon.svg` }],
-      ['meta', { name: 'theme-color', content: '#0f766e' }],
+      ['meta', { name: 'theme-color', content: '#3f51b5' }],
       [
         'meta',
         { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }

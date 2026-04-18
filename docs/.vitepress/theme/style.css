@@ -13,10 +13,12 @@
   --ct-doc-line-height: 1.75;
 
   /* d2l-zh font stack */
-  --d2l-font-sans: Roboto, 'Noto Sans SC', system-ui, -apple-system,
-    'PingFang SC', 'Microsoft YaHei', sans-serif;
-  --d2l-font-mono: Menlo, 'DejaVu Sans Mono', 'Liberation Mono', Consolas,
-    'Ubuntu Mono', 'Courier New', monospace;
+  --d2l-font-sans:
+    Roboto, 'Noto Sans SC', system-ui, -apple-system, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
+  --d2l-font-mono:
+    Menlo, 'DejaVu Sans Mono', 'Liberation Mono', Consolas, 'Ubuntu Mono',
+    'Courier New', monospace;
 
   /* Override VitePress default font to d2l style */
   --vp-font-family-base: var(--d2l-font-sans);
@@ -64,13 +66,15 @@
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 2px;
   background: #fff;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
 }
 
 .VPButton.brand {
-  box-shadow: 0 2px 2px 0 rgba(63, 81, 181, 0.2),
+  box-shadow:
+    0 2px 2px 0 rgba(63, 81, 181, 0.2),
     0 3px 1px -2px rgba(63, 81, 181, 0.25),
     0 1px 5px 0 rgba(63, 81, 181, 0.15);
 }
@@ -79,7 +83,8 @@
    Navigation Bar (参考 d2l 顶部导航栏)
    =================================================== */
 .VPNav {
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
 }
@@ -111,7 +116,9 @@
 
 /* Social links */
 .VPNavBarSocialLinks .social-link {
-  transition: color 0.2s ease, background-color 0.2s ease;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
 }
 
 .VPNavBarSocialLinks .social-link:hover {
@@ -297,14 +304,16 @@
 
 .vp-doc pre {
   border-radius: 4px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
   transition: box-shadow 0.2s ease;
 }
 
 .vp-doc pre:hover {
-  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 3px 4px 0 rgba(0, 0, 0, 0.14),
     0 3px 3px -2px rgba(0, 0, 0, 0.2),
     0 1px 8px 0 rgba(0, 0, 0, 0.12);
 }
@@ -322,7 +331,8 @@
 }
 
 .dark .vp-doc pre {
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.3),
     0 3px 1px -2px rgba(0, 0, 0, 0.4),
     0 1px 5px 0 rgba(0, 0, 0, 0.25);
 }
@@ -395,13 +405,17 @@
 /* ---- Tables (d2l Material Design 风格) ---- */
 .vp-doc table {
   position: relative;
+  display: block;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-collapse: collapse;
   font-size: 0.85rem;
-  margin: 1.5rem 0;
+  margin: 1.5rem auto;
   table-layout: auto;
+  width: fit-content;
   max-width: 100%;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  overflow-x: auto;
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
 }
@@ -454,7 +468,8 @@
   width: auto;
   max-width: 100%;
   border-radius: 2px;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
 }
@@ -733,7 +748,8 @@ mjx-container[display='true'] {
 
 .VPDocFooter .pager-link:hover {
   border-color: var(--vp-c-brand-1);
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
 }

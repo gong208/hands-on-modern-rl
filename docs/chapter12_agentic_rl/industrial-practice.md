@@ -1,140 +1,151 @@
-# 12.5 工业界实战：那些论文里没写的“血泪坑”
+# 12.5 工业界实践：Agentic RL 训练中的常见问题与解决方案
 
-前面几节讲了 Agentic RL 的通用工程原则和框架设计。但当你真正动手训练一个 Agentic RL 模型时，会遇到各种论文里不会写的坑——训练突然崩了、回答越来越长变成乱码、reward 涨了但质量反而下降了。
+前面几节介绍了 Agentic RL 的通用工程原则和框架设计。然而，在实际训练过程中，研究者往往会遇到一系列工程问题——训练不稳定、输出长度失控、奖励指标与实际质量脱节等。这些问题在学术论文中通常不会详细讨论，但对于工程实践至关重要。
 
-2025–2026 年，多家公司（如 Alibaba、Moonshot、LinkedIn、Bespoke Labs 等）公开了他们做 Agentic RL 的“踩坑血泪史”。为了让 0 基础的开发者也能快速避坑，我们**不再按公司罗列，而是按照你动手训练时会遇到的“案发现场”时间线**，把这些工业界真金白银砸出来的经验串起来。
+2025–2026 年间，多家团队（包括 Alibaba、Moonshot、LinkedIn、Bespoke Labs 等）陆续公开了他们在 Agentic RL 训练中的实践经验。本节不再按团队逐一介绍，而是**按照实际训练中可能遇到的问题场景**进行组织，将不同团队的发现和解决方案汇总在一起。
 
-> 💡 **核心心法提前看**：在 Agentic RL 里，“先跑起来不崩”比“用什么花哨算法”重要得多。数据质量和环境稳定性，是决定生死的第一关。
-
----
-
-## 场景一：训练还没开始，数据和环境去哪弄？
-
-很多人的第一个问题是：我要让模型学会上网搜索或写代码，是不是得接个真实的浏览器或者真实的沙盒让它去交互？
-
-### 真实 API 的坑：又贵又慢又不稳定
-
-如果你直接接真实的搜索引擎 API 做训练，会遇到一个致命问题：**不可复现**。
-
-> **Moonshot AI（月之暗面）**在训练 Kimi-Researcher 时发现：搜索引擎的结果是随时间变化的。这导致 PPO 算法中要求的“同一状态（State）应该产生一致的观测（Observation）”这个假设被破坏了。因此，他们干脆放弃了对环境稳定性要求高的 PPO/GRPO，用起了最古老但也最随性的 **REINFORCE** 算法（端到端直接算梯度），这是一种工程上的妥协与创新 [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
-
-### 解法：自己造“楚门的世界”（合成环境）
-
-与其让模型去真实的互联网里“裸奔”，不如给它造一个确定性的“模拟沙盒”。
-
-> **Alibaba 通义团队**在构建 Tongyi DeepResearch 时，发现“数据和训练环境的稳定性是决定 RL 是否 work 的更关键因素”。他们没有用真实的 Web API，而是用离线的 Wikipedia 数据库和自定义工具，造了一个确定性的合成环境。实验证明，在这个“楚门的世界”里用合成数据训练，效果远比在真实但嘈杂的人工标注数据上好得多 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
-
-### 没算力没数据？72 条数据也能“逆天改命”
-
-如果你说“我是个人开发者，没那么多钱合成数据”，别怕。
-
-> **Amazon Science** 证明了小数据定制的奇迹。在 AppWorld（个人助手 agent 基准）上，他们仅仅用了 **72 个高质量的训练样本**做 RL，就把 Qwen-2.5-32B 的任务完成率从 39.2% 拔高到了 72%，甚至超过了 Claude Sonnet 3.7/4.0。他们的结论是：高质量的小数据，加上模型在 RL 过程中的自我探索（比如模型自己学会了“写代码前先查 API 文档”），完全可以四两拨千斤 [\[参考\]](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)。
+> **核心要点**：在 Agentic RL 中，训练的稳定性往往比算法选择更为重要。数据质量和环境的一致性是决定训练效果的关键因素。
 
 ---
 
-## 场景二：刚跑起来就崩了，Loss 怎么爆炸了？
+## 场景一：训练数据的获取与环境构建
 
-好不容易搞定了数据，你兴奋地按下了 `python train.py`，结果没跑几步，梯度爆炸了，Reward 死活不涨。你开始怀疑是不是 PPO 算法的超参数没调对。
+许多研究者在开始 Agentic RL 训练时，首先面临的问题是：如何为模型提供稳定且可复现的交互环境？
 
-别急着调参，**很可能是你底层的代码写错了，而且错得很深。**
+### 真实 API 的局限性：不可复现性
 
-### 隐藏杀手：训练引擎和推理引擎“精神分裂”
+如果直接接入真实的搜索引擎或代码执行环境进行训练，会遇到一个根本性的问题：**外部环境的输出是不可复现的**。
 
-Agentic RL 的特点是：模型需要先**推理（Rollout）**生成动作，然后再**训练（Backward）**更新权重。
+> **Moonshot AI** 在训练 Kimi-Researcher 时指出，Agent 所面对的环境是动态的——即使输入相同的查询，搜索引擎也可能返回不同的结果。他们在训练中主要采用了 **REINFORCE** 算法，并强调严格 On-policy 数据生成对训练稳定性的重要性 [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
 
-> **LinkedIn 团队**在用 GPT-OSS（一个 MoE 架构的开源模型）做 RL 训练时，遇到了极其诡异的梯度爆炸。他们扒到了最底层的 CUDA Kernel 才发现根因：推理引擎（vLLM/SGLang 使用的 Triton kernel）和训练引擎（FSDP 使用的 FlashAttention-v2）对 Attention 的实现有一点点微小的差异。这种“精神分裂”导致模型在生成数据和计算梯度时对不齐。更离谱的是，他们发现训练框架里根本没实现 Attention Sink 参数的反向传播（Backward），相当于模型在训练时，有一部分脑子是“假装不存在”的。直到他们手写了 FlashAttention-v3 的 Sink Backward，训练才彻底稳定 [\[参考\]](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)。
+### 合成环境的构建
 
-👨‍💻 **小白避坑大白话**：如果你用复杂的模型（比如 MoE），别盲目相信开源框架的默认配置。先在最简单的单轮问答（比如 GSM8K）上跑通，确认 Loss 正常下降，再去跑多轮 Agent 任务。
+一个可行的替代方案是构建确定性的合成环境，让模型在受控的条件下进行训练。
+
+> **Alibaba 通义团队** 在构建 Tongyi DeepResearch 时，构建了一个以离线 Wikipedia 数据库和自定义工具为核心的合成训练环境，作为主要的训练平台。该合成环境提供快速且确定性的交互体验，有利于模型稳定学习。同时，他们也使用了冗余的备用搜索 API 等真实服务作为后备。实验表明，在合成环境中用合成数据训练的效果，可以优于在真实但噪声较大的标注数据上训练 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
+
+### 小规模数据的有效性
+
+对于资源有限的研究者而言，高质量的小规模数据同样可以取得显著效果。
+
+> **Amazon Science** 在 AppWorld 基准测试上进行了验证：仅使用 **72 个高质量训练样本**进行 RL 训练，即可将 Qwen-2.5-32B 的任务完成率从 39.2% 提升至 72%，超过了 Claude Sonnet 3.7/4.0 的表现。这表明，高质量的数据结合模型在 RL 过程中的自主探索能力，能够以较小的数据规模实现有效的模型定制 [\[参考\]](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)。
 
 ---
 
-## 场景三：模型变成了“话痨”和“乱码复读机”？
+## 场景二：训练初期的梯度爆炸问题
 
-这是 Agentic RL 里最常见、也最让人崩溃的现象：模型不仅没有学会用工具，反而开始疯狂输出几千个 token 的废话，最后变成毫无意义的乱码。或者更惨的，发生了**格式坍塌（Format Collapse）**：
+在解决了数据和环境的准备问题后，训练启动阶段的梯度爆炸是另一个常见问题。在排查超参数之前，应当首先检查底层实现的正确性。
+
+### 推理引擎与训练引擎的实现差异
+
+Agentic RL 的训练过程包含两个阶段：**推理（Rollout）** 阶段生成动作序列，**训练（Backward）** 阶段更新模型权重。这两个阶段通常由不同的引擎负责执行，而引擎之间的实现差异可能导致梯度计算不一致。
+
+> **LinkedIn 团队** 在使用 GPT-OSS（一个 MoE 架构的开源模型）进行 RL 训练时，遇到了梯度爆炸和奖励不增长的问题。经过排查，他们发现根本原因是训练框架中 **Attention Sink 参数的反向传播未被实现**：推理引擎（SGLang 使用的 Triton kernel）支持 Attention Sink 的前向计算，但训练框架（FSDP 使用的 FlashAttention-v2）完全缺少对应的支持。他们从 vLLM 的 FlashAttention 分支中获取了前向实现，并自行编写了反向传播代码来计算 Sink 参数的梯度。修复该问题后，训练才恢复稳定 [\[参考\]](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)。
+
+**实践建议**：在使用复杂模型架构时，建议先在简单的单轮任务（如 GSM8K）上验证训练流程的正确性，确认 Loss 正常下降后，再切换到多轮 Agent 任务。
+
+---
+
+## 场景三：输出长度失控与格式坍塌
+
+这是 Agentic RL 训练中最常见的问题之一：模型未能学会正确使用工具，反而开始生成大量无意义的 token，最终退化为重复的乱码输出。这种现象被称为**格式坍塌（Format Collapse）**：
 
 ```json
 // 期望的输出格式：
 {"action": "search", "query": "AAPL stock"}
 
-// 训练跑偏后的崩溃输出（格式坍塌）：
-{"action": "searchsearchAAPL<|endoftext|><|endoftext|><|endoftext|>"
+// 格式坍塌后的输出：
+{"action": "searchsearchAAPL stockAAAAA"
 ```
 
-### 乱码原因 1：Reward 设计太复杂，“聪明反被聪明误”
+下面分析导致这一问题的三个主要原因及其对应的解决方案。
 
-你可能觉得，为了让模型学得好，我得给它很多奖励信号：用了工具给 +1，格式对了给 +1，最终答案对了给 +5。
+### 原因一：奖励函数设计过于复杂
 
-> **Bespoke Labs** 发现，复杂的 Reward 反而会被模型“钻空子”（Reward Hacking）。模型发现只要不断调用工具就能一直拿 +1，于是它干脆不回答问题了，就一直在那死循环调工具。他们的最终解法是：**大道至简，只保留“任务是否完成”这一个二值的奖励信号**，其他花里胡哨的奖励全删掉，训练反而最稳定 [\[参考\]](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)。
+直觉上，研究者可能会设计多维度的奖励信号：工具调用成功给 +1，输出格式正确给 +1，最终答案正确给 +5。然而，这种细粒度的奖励设计可能适得其反。
 
-### 乱码原因 2：负样本没过滤好，模型“破罐子破摔”
+**奖励博弈（Reward Hacking）** 是其中的核心问题。当奖励函数包含多个可被模型独立优化的子项时，模型可能找到只满足部分条件就能获得高奖励的策略。
 
-有时候模型没做对任务，其实是因为步数超了或者被环境截断了，但它输出的格式是完美的。如果你一股脑把这些没完成的任务全给惩罚（负样本）。
+> **Bespoke Labs** 的实验表明，包含工具调用次数奖励、格式检查奖励和正确性奖励的复合奖励函数，反而导致训练稳定性下降，推测原因正是奖励博弈。此外，他们还观察到输出长度持续膨胀、最终退化为无意义的乱码字符。他们最终采用的做法是：**仅保留"任务是否完成"这一个二值奖励信号**（通过 BFCL 的评估检查即为 1，否则为 0），删除所有中间过程的奖励项，训练稳定性反而显著提升 [\[参考\]](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)。
 
-> **Alibaba 通义团队**观察到，不加过滤的负样本会在长时间训练后导致“格式坍塌”——模型连怎么输出正确的工具调用格式都忘了。他们的解法是**保守负采样（Conservative Negative Sampling）**：选择性地排除那些因为超出长度限制而没有产生最终答案的轨迹，保护模型的格式输出能力 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
+这一发现背后的逻辑是：二值的最终结果奖励不提供任何中间步骤的"捷径"，模型必须在整体上完成任务才能获得正向奖励，从而避免了针对单个奖励项的投机行为。此外，Bespoke Labs 还观察到复合奖励下输出长度持续膨胀并最终退化为乱码的现象，简化奖励设计后这一问题也得到了缓解。
 
-### 乱码原因 3：“遛狗的绳子（KL 散度）”断了
+### 原因二：负样本处理不当
 
-在 RLHF/GRPO 里，我们通常会用一个 KL 惩罚项（KL Penalty）来限制正在训练的模型（策略模型）不要偏离初始模型（Reference Model）太远。这就像是你遛狗时的牵引绳，Reference Model 就是你，狗就是策略模型。
+在训练过程中，并非所有未能完成任务的样本质量都相同。例如，模型可能因为交互步数达到上限而被环境截断，此时并未产生最终答案，但在此之前的输出可能是合理的。如果将这类样本不加区分地作为负样本给予惩罚，可能会损害模型已经习得的输出能力。
 
-> **Bespoke Labs** 在训练 Qwen-2.5-7B 时踩遍了坑：如果把 KL 惩罚设为 0（解开牵引绳），模型 300 步就彻底放飞自我，跑出乱码；如果 KL 太大，模型又学不到新东西。
-> 他们的秘籍是：
+> **Alibaba 通义团队** 观察到，不加过滤的负样本在长时间训练后会导致格式坍塌——模型逐渐丧失正确输出工具调用格式的能力。他们采用了**保守的负样本处理策略**：选择性地排除那些因超出长度限制而未产生最终答案的轨迹，使其不参与损失计算，从而保护模型的格式输出能力 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
+
+### 原因三：KL 散度约束的配置不当
+
+在 RLHF/GRPO 中，通常使用 KL 惩罚项来限制当前策略模型与初始参考模型之间的偏离程度。KL 约束的作用是防止策略在训练过程中偏离初始模型太远，从而维持输出的基本质量。
+
+这一约束的配置需要在"允许策略探索"和"维持稳定性"之间取得平衡：
+
+- **KL 惩罚过小**：约束力不足，策略可能偏离初始模型太远，导致输出质量退化。
+- **KL 惩罚过大**：约束过强，策略难以学到新的行为，训练效果受限。
+
+> **Bespoke Labs** 在训练 Qwen2.5-7B-Instruct 时发现，将 KL 惩罚设为 0 时，模型在约 300 步后即出现输出退化。他们采用的策略是：
 >
-> 1. **给一根极细的绳子**：把 KL 权重设为微小的 0.001，提供保底约束。
-> 2. **人跟着狗走（定期更新 Reference）**：每 100 步，把现在的狗（当前策略模型）复制一份当成新主人（新的 Reference Model）。让约束从“别跑太远”变成“别跑太远，但可以往前跑” [\[参考\]](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)。
+> 1. **设置微小的 KL 权重**（如 0.001），提供最小程度的约束。
+> 2. **定期更新参考模型**：每隔一定步数（如 100 步），将当前策略模型复制为新的参考模型。这样，KL 约束的目标会随训练推进而动态调整，避免策略被"锚定"在过远的初始状态上 [\[参考\]](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)。
 
-### 话痨解法：Gamma-decay 奖励效率，而不是惩罚长度
+### 输出长度控制：Gamma-decay 奖励
 
-怎么阻止模型为了凑字数而变成话痨？
+为了鼓励模型以更少的步数完成任务，可以引入基于步数衰减的奖励机制。
 
-> **Moonshot** 提出了一招叫 **Gamma-decay Reward**。如果模型对了，奖励不是固定的，而是随着步数衰减：$r_i = r \times \gamma^{T-i}$（$\gamma < 1$）。
-> 简单说就是：**同样是答对问题，你用 5 步答对，我给你 10 块钱；你磨叽了 30 步才答对，我只给你 2 块钱。** 这样模型就会自己学会“闭嘴，快点干活” [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
-
----
-
-## 场景四：长任务跑到一半，模型“失忆”了？
-
-Agentic RL 和传统 RL 最大的不同，就是交互轮数可能极长。如果要查文献、写代码、再改 Bug，可能要交互 50 轮以上。这时候，上下文窗口（Context Window）很快就会被撑爆，模型就像一个记性差的人，开始忘记最开始的任务。
-
-### 解法：教模型“断舍离”（Context Management）
-
-> **Moonshot** 的 Kimi-Researcher 在解决长文本失控时，引入了**上下文管理（Context Management）**机制。他们不强求模型记住所有历史，而是让模型在每一轮自己决定：**“这篇网页有用吗？有用就提炼摘要留着，没用就扔掉（丢弃文档）。”** 消融实验证明，学会了“断舍离”的模型，平均能多跑 30% 的轮次而不失忆，最终拿到了更高的分数 [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
+> **Moonshot** 提出了 **Gamma-decay Reward**。当模型正确完成任务时，奖励值随所用步数指数衰减：
+>
+> $$r_i = r \times \gamma^{T-i}, \quad \gamma < 1$$
+>
+> 其中 $T$ 是总步数，$i$ 是当前步数。这意味着：完成相同任务时，使用更少的步数会获得更高的奖励，从而引导模型学会更高效地执行任务 [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
 
 ---
 
-## 场景五：Agent 在"一本正经地胡说八道"？
+## 场景四：长程交互中的上下文管理
 
-你终于把模型训得不再乱码了，工具调用格式也正常了，但跑出来一看——模型在搜索结果里引用了一篇根本不存在的论文，或者把某个 API 的参数名写错了却"自信满满"地继续往下走。这就是 **Agent 幻觉（Hallucination）** 在 Agentic RL 中的特殊表现。
+Agentic RL 与传统 RL 的一个重要区别在于交互轮数可能非常长。在文献检索、代码编写、调试等复杂任务中，交互轮数可能超过 50 轮，此时上下文窗口会被大量历史信息填满，模型可能丢失对初始任务的关注。
+
+### 上下文管理机制
+
+> **Moonshot** 的 Kimi-Researcher 引入了 **上下文管理（Context Management）** 机制。其核心设计是通过一个 `context_manager` 函数，在每一轮交互中对当前状态进行筛选：保留重要信息，丢弃不必要的文档，从而将单次 Rollout 的交互轮次延长至 50 轮以上。早期消融实验显示，启用上下文管理后，模型平均多执行了 30% 的交互轮次，能够获取更多信息并取得更高的任务得分 [\[参考\]](https://moonshotai.github.io/Kimi-Researcher/)。
+
+---
+
+## 场景五：Agent 幻觉及其控制
+
+在解决了训练稳定性和输出格式的问题之后，另一个需要关注的问题是 **Agent 幻觉（Hallucination）**：模型可能在搜索结果中引用不存在的文献，或者错误地使用 API 参数，却对后续推理表现出不恰当的"自信"。Agent 场景中的幻觉比纯对话场景更为复杂，因为模型不仅生成文本，还生成动作。
 
 ### Agent 幻觉的四种类型
 
-Agent 场景中的幻觉比纯对话场景更复杂，因为模型不仅生成文本，还**生成动作**。幻觉可以发生在四个层面：
+**工具选择幻觉。** 模型调用了一个不存在的工具，或者在不该调用工具时强制调用。例如用户询问天气信息，模型却调用了 `execute_sql`。
 
-**工具选择幻觉。** 模型调用了一个不存在的工具，或者在不该调用工具时强制调用。例如用户问"今天天气如何"，模型却去调用了 `execute_sql`。
+**参数幻觉。** 工具选择正确，但参数填写错误——编造了不存在的 API 端点、拼错了数据库名、或使用了格式不正确的参数值。最值得警惕的是：参数格式可能看起来"合理"，但实际值是虚构的。
 
-**参数幻觉。** 工具选对了，但参数填错了——编造了不存在的 API 端点、拼错了数据库名、或者给了一个格式完全不对的日期。最危险的是：参数格式看起来"合理"，但实际值是假的。
+**结果幻觉。** 这是最隐蔽的幻觉类型。模型调用了正确的工具并获得了真实的返回结果，但在解读结果时引入了偏差——将搜索结果中的无关信息当作支持自己论点的证据，或忽略了与假设矛盾的内容。
 
-**结果幻觉。** 这是最隐蔽的幻觉类型。模型调用了正确的工具，也得到了真实的返回结果，但在**解读结果时引入了幻觉**——把搜索结果中的无关信息硬说成支持自己的论点，或者直接忽略了与自己假设矛盾的证据。
+**引用幻觉。** 模型声称"根据某文献/某网站"得出某个结论，但该引用实际上不存在，或引用内容与原文不符。这在 Deep Research Agent 中尤为常见——模型可能编造论文标题、URL 和统计数据来使输出"看起来有据可查"。
 
-**引用幻觉。** 模型声称"根据某论文/某网站"，但那个引用根本不存在，或者引用的内容与原文不符。这在 Deep Research Agent 中尤其常见——模型为了"看起来有据可查"，会编造论文标题、URL 和统计数据。
+### Agent 幻觉的级联效应
 
-### 为什么 Agent 幻觉比对话幻觉更危险？
+在纯对话场景中，幻觉的后果通常限于提供错误信息。但在 Agent 场景中，幻觉会在多轮交互中**级联传播并自我强化**：
 
-在纯对话场景中，幻觉的后果通常是"给用户一个错误答案"。但在 Agent 场景中，幻觉会**级联传播并自我强化**：
+1. 第 3 轮：模型产生参数幻觉，调用了一个不存在的 API 参数 → 调用失败
+2. 第 4 轮：模型未能识别幻觉，反而认为"该 API 存在缺陷" → 切换到另一个工具
+3. 第 5 轮：新工具缺少关键功能 → 模型编造了一个看似合理的结论
+4. 最终输出：一份表面上完整但建立在幻觉基础上的报告
 
-1. 第 3 轮：模型幻觉了一个不存在的 API 参数 → 调用失败
-2. 第 4 轮：模型没有意识到是参数幻觉，反而认为"这个 API 有 bug" → 切换到另一个工具
-3. 第 5 轮：新工具缺少关键功能 → 模型编造了一个"合理"的结论
-4. 最终输出：一个"看起来完整但建立在幻觉基础上的报告"
-
-更可怕的是，如果 RL 的 reward 只看最终输出质量（ORM），模型可能发现"编造一个看起来可信的答案"比"老老实实承认不确定"获得更高的 reward——RL 反而**强化了幻觉行为**。
+更值得关注的是，如果 RL 的奖励仅基于最终输出质量（即 Outcome Reward），理论上模型可能发现"编造一个看似可信的答案"比"承认不确定"获得更高的奖励——这意味着 RL 训练反而可能**强化幻觉行为**。这一推断在逻辑上成立，但在已公开的工业界实践中尚未被明确报告为观察到的现象。
 
 ### RL 训练中的幻觉惩罚机制
 
-**引用感知惩罚。** 清华的 CaRR[^carr_industrial]（Citation-Aware Reward）提出了针对引用幻觉的专门惩罚机制：模型输出的每个论断都必须附带可验证的引用。如果引用 URL 不可访问，惩罚 0.5 分；如果引用内容与论断不符，惩罚 0.3 分。这种细粒度的惩罚让模型学会"没有证据的话不说"。
+**引用感知评分奖励。** 清华大学与智谱 AI 联合提出的 CaRR[^carr_industrial]（Citation-aware Rubric Rewards）设计了一种细粒度的奖励机制来引导模型正确引用证据。其核心思路是将多跳问题分解为一系列原子事实陈述（Rubrics），然后通过三步流程计算奖励：（1）检查模型输出是否识别了关键实体；（2）提取输出中引用的 URL，获取网页内容，判断每条 Rubric 是否被引用内容所支持；（3）通过图上的广度优先搜索验证各 Rubric 是否在逻辑上与最终答案相连通。最终奖励为被满足且逻辑连通的 Rubric 数量占总 Rubric 数量的比率。这一机制鼓励模型为每个论断提供可验证的、逻辑连贯的引用证据。
 
-**工具结果忠实度奖励。** 鼓励模型在解读工具返回结果时忠实于原始内容。如果模型的"总结"与工具实际返回的信息存在偏差（用 NLI 模型或交叉验证检测），就给予惩罚。
+**工具结果忠实度奖励。** 鼓励模型在解读工具返回结果时忠实于原始内容。如果模型的总结与工具实际返回的信息存在偏差（通过 NLI 模型或交叉验证检测），则给予惩罚。
 
-**不确定性奖励。** 鼓励模型在不确定时主动说"我需要更多信息"或"这个结果不确定"，而不是编造答案。这需要在 reward 设计中**奖励诚实**：
+**不确定性奖励。** 鼓励模型在不确定时主动表达"需要更多信息"或"该结果不确定"，而非编造答案。综合上述三种策略，可以设计一个幻觉感知的奖励函数作为示例：
+
+> **注意**：以下代码为说明性示例，综合了多种惩罚思路，并非直接来自某一篇论文的具体实现。
 
 ```python
 def hallucination_aware_reward(answer, tool_results, citations):
@@ -144,7 +155,7 @@ def hallucination_aware_reward(answer, tool_results, citations):
     # 1. 引用真实性检查
     for citation in citations:
         if not verify_citation_exists(citation):
-            reward -= 0.5  # 虚假引用，严厉惩罚
+            reward -= 0.5  # 虚假引用，惩罚
         elif not verify_citation_supports(citation, answer):
             reward -= 0.3  # 引用与论断不符
 
@@ -156,99 +167,99 @@ def hallucination_aware_reward(answer, tool_results, citations):
             reward -= 0.2  # 可验证但无证据的论断
 
     # 3. 鼓励不确定性表达（诚实奖励）
-    if is_complex_question and "不确定" in answer or "需要更多信息" in answer:
+    if is_complex_question and ("不确定" in answer or "需要更多信息" in answer):
         if not all_claims_supported(answer, tool_results):
-            reward += 0.15  # 在确实没证据时，承认不确定是好行为
+            reward += 0.15  # 在确实缺乏证据时，承认不确定性是合理行为
 
     return reward
 ```
 
 ### 基于验证的幻觉过滤
 
-除了在 reward 中惩罚幻觉，还可以在**推理时**通过验证机制过滤幻觉输出：
+除了在奖励函数中惩罚幻觉外，还可以在**推理阶段**通过验证机制进行过滤：
 
-**Self-RAG[^selfrag_industrial]** 提出了"检索增强生成 + 自我反思"的框架。模型在生成每个论断后，会自我判断"这个论断是否需要检索支持"。如果需要，就调用搜索工具验证；如果搜索结果不支持论断，模型就修正或删除该论断。Self-RAG 的创新在于把"幻觉检测"变成了模型自身的一种能力——不是外部系统来检查，而是模型自己学会"我什么时候可能在胡说"。
+**Self-RAG[^selfrag_industrial]** 提出了"自适应检索 + 自我评估"的框架。与传统 RAG 对每个查询都检索不同，Self-RAG 让模型在生成每个文本段**之前**，先通过特殊的反思 token（Reflection Token）判断是否需要检索外部信息。如果需要，则检索若干相关段落，为每条段落分别生成续写，并通过 [IsRel]（相关性）、[IsSup]（支撑度）、[IsUse]（有用性）等反思 token 对各候选续写进行打分，最终通过分段束搜索（Beam Search）选择综合得分最高的输出。该框架的核心特点是模型通过反思 token 实现了对自身输出的结构化自评估。
 
-**CRITIC[^critic_industrial]** 则提供了"工具辅助纠错"的幻觉过滤机制。模型生成初始回答后，主动调用外部工具（搜索引擎、代码执行器、数据库查询）来验证关键论断。如果工具返回的结果与模型论断矛盾，就触发纠错流程。与 Self-RAG 的"自我反思"不同，CRITIC 依赖外部工具的客观反馈——这在事实性幻觉的检测上更可靠。
+**CRITIC[^critic_industrial]** 提出了"工具辅助纠错"的幻觉过滤机制。模型生成初始回答后，主动调用外部工具（如搜索引擎、代码执行器）来验证关键论断，并基于工具反馈生成结构化的批评意见。如果批评意见表明回答存在问题，则模型基于批评意见重新生成修正后的回答。这一"验证→修正→验证"的循环可以迭代多轮，直到回答通过验证或达到最大迭代次数。与纯粹依赖模型自我评估的方法不同，CRITIC 引入了外部工具的客观反馈作为纠错依据。
 
-### 工业界实践建议
+### 幻觉控制实践总结
 
 | 幻觉类型     | 检测方法                | RL 惩罚策略                 |
 | ------------ | ----------------------- | --------------------------- |
 | 工具选择幻觉 | 工具白名单校验          | 调用不存在工具 → reward = 0 |
 | 参数幻觉     | Schema 校验 + 类型检查  | 参数格式错误 → 负向 reward  |
 | 结果幻觉     | NLI 模型 + 交叉验证     | 论断与工具结果矛盾 → 惩罚   |
-| 引用幻觉     | URL 可达性 + 内容相关性 | 虚假引用 → 严厉惩罚         |
+| 引用幻觉     | URL 可达性 + 内容相关性 | 虚假引用 → 惩罚             |
 
-关键原则：**幻觉惩罚要在训练早期就引入，不要等到模型已经学会"编造"了再加**。一旦幻觉行为被 RL 强化，后续消除会非常困难。
-
----
-
-## 场景六：其他单例与特定架构的坑
-
-前面的场景是绝大多数人在做 Agentic RL 时都会遇到的通用问题（数据、Reward、上下文、显卡利用率）。但如果你在使用某些**特定的模型架构（如 MoE）**，或者**试图在极小参数量的模型上创造奇迹**，你还会踩到一些专门为你准备的坑。
-
-### 1. MoE 模型的路由不确定性，破坏了 RL 的底层假设
-
-很多团队看中了 MoE 模型（如 Mixtral、DeepSeek-V3）推理成本低的优势，想拿它做 Agentic RL 的基座。但 MoE 模型有一个致命陷阱：**路由选择的随机性**。
-
-PPO 等算法有一个核心假设：当前生成数据的模型和正在被训练的模型，必须是同一个（即 On-policy）。这在数学上表现为重要性采样比率（Ratio）必须等于 1。
-
-> **LinkedIn 团队**在用 GPT-OSS 做 RL 时发现，MoE 模型的 Gating Network（路由网络）在两次 Forward Pass 时，可能会给同一个 Token 选择不同的专家（Expert）！这直接导致 $\log \pi(a|s) \neq \log \pi_{\text{old}}(a|s)$，PPO 的 On-policy 假设被当场击碎。他们不得不写了一行硬核代码：`old_log_prob = log_prob.detach()`，强行把两次概率拉齐，才把这个问题稳住 [\[参考\]](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)。
-
-### 2. MoE 训练不仅人跑得慢，连“专家”也闲忙不均
-
-前面我们提到了“有的人跑得快，有的人跑得慢”的木桶效应。对于 MoE 模型，这种显卡空转更严重，因为不仅任务长度不同，连不同“专家（Expert）”的负载也不同（大家都想用同一个聪明的专家，导致负责这个专家的显卡被挤爆，其他显卡在发呆）。
-
-> **Salesforce** 提出了**流水线同步 RL（Pipelined Synchronous）**结合 **Least-Loaded Expert Parallelism**。他们不仅让 Rollout（做题）和 Training（讲题）交替进行，还让空闲的 GPU 去接管负载重的 MoE 专家。这套组合拳把 16 块 H200 榨干到了极致，内存效率比传统方法高了 250 倍 [\[参考\]](https://www.salesforce.com/blog/efficient-rl-training-agentic-era/)。
-
-### 3. 太迷信 RL，小模型碰到了“推理天花板”
-
-很多新手有一种错觉：“只要我用 RL 训得足够久，哪怕是个 1B 的小模型，也能像 GPT-4 一样聪明。”
-但 RL 的本质是“激发模型已有的潜力”，而不是“无中生有注入新知识”。
-
-> **Amazon Science** 的实验发现：32B 模型从 RL 中获益极大，因为模型本身聪明，能生成高质量的轨迹（Rollout），形成正反馈循环。但 3B 的小模型在做某些任务时，甚至连“这个问题无法回答”都判断不出来。这种基础能力的缺失，RL 怎么惩罚都没用。这就好比你让一个小学生去考微积分，你再怎么扣他分，他也写不出来，因为他压根没学过。所以：对于小模型，遇到瓶颈了，老老实实回去做 SFT 或者蒸馏，别死磕 RL [\[参考\]](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)。
-
-### 4. 不能全靠 RL，要分阶段培养（三阶段管线）
-
-既然小模型不能直接硬上 RL，大模型直接做 RL 也容易崩溃，那正确的姿势是什么？
-
-> **Alibaba 通义团队**没有把希望全寄托在 RL 上，而是设计了稳扎稳打的“三步走战略”（**Agentic CPT → Agentic SFT → Agentic RL**）。他们在预训练（CPT）阶段，就把工具调用的轨迹重写成文本喂给模型；在 SFT 阶段教它怎么思考；最后才用 RL 做提纯。他们发现，如果在起步阶段模型就没有基本的工具使用能力，直接上 RL 就是一场灾难 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
+一个重要的实践原则是：**幻觉惩罚应在训练早期即引入**。一旦幻觉行为通过 RL 被强化，后续消除将非常困难。
 
 ---
 
-## 实战避坑 Checklist (TL;DR) {#tricks}
+## 场景六：特定模型架构的注意事项
 
-如果你马上要动手写代码了，请把这张表贴在显示器旁边：
+前面的场景是大多数 Agentic RL 训练中都会遇到的共性问题。此外，使用特定的模型架构（如 MoE）或在较小参数量的模型上进行训练时，还可能出现一些额外的问题。
 
-| 现象 / 目标               | 工业界救命药方                                                               | 来源参考              |
-| ------------------------- | ---------------------------------------------------------------------------- | --------------------- |
-| **没数据/想省钱**         | 用离线数据搞“合成环境”；几十条高质量小数据也能出奇迹。                       | Alibaba / Amazon      |
-| **Loss 莫名爆炸**         | 检查底层 CUDA Kernel，确保推理（Rollout）和训练（Backward）是完全一致的。    | LinkedIn              |
-| **模型变复读机/乱码**     | **极简 Reward**（只奖成败）；加上**长度过滤**（把太长的输出直接扔掉）。      | Bespoke Labs          |
-| **策略偏离/瞎探索**       | 设微小的 KL 惩罚（0.001）；**每 100 步把当前模型设为新的 Reference Model**。 | Bespoke Labs          |
-| **回答越来越长（话痨）**  | 用 **Gamma-decay 衰减奖励**（越快解决，给钱越多）。                          | Moonshot              |
-| **格式坍塌（忘记格式）**  | 采用**保守负采样**，过滤掉因超长等客观原因失败但格式正确的轨迹。             | Alibaba               |
-| **长任务导致 OOM/失忆**   | 教模型做“摘要过滤”，主动丢弃没用的历史信息（Context Management）。           | Moonshot              |
-| **GPU 等待时间太长**      | 把没跑完的超长任务强制切断，存进 Buffer，下次用新权重接着跑。                | Moonshot / Salesforce |
-| **MoE 训练报错/利用率低** | 修正 Gating 的 On-policy 假设（detach）；引入专家并行和流水线同步。          | LinkedIn / Salesforce |
-| **小模型训练卡瓶颈**      | 不要硬上 RL，先用 SFT 或蒸馏提升基础能力；采用 **CPT -> SFT -> RL** 三阶段。 | Amazon / Alibaba      |
+### MoE 模型的路由不确定性
+
+MoE 模型（如 Mixtral、DeepSeek-V3）因推理成本较低而受到关注，但其路由机制可能破坏 RL 训练的基本假设。
+
+PPO 等算法假设当前生成数据的模型与正在被训练的模型是同一个（即 On-policy），这在数学上表现为重要性采样比率等于 1。
+
+> **LinkedIn 团队** 在使用 GPT-OSS 进行 RL 训练时发现，MoE 模型的路由网络（Gating Network）在两次前向传播中，可能为同一个 Token 选择不同的专家（Expert），导致 $\log \pi(a|s) \neq \log \pi_{\text{old}}(a|s)$，即 On-policy 假设被破坏。在排查过程中，他们曾尝试通过 `old_log_prob = log_prob.detach()` 的方式将两次概率强制对齐来验证这一假设。需要指出的是，该路由不一致问题虽真实存在，但在他们的调试中并非梯度爆炸的根本原因——根本原因在于上节所述的 Attention Sink 反向传播缺失 [\[参考\]](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)。
+
+### MoE 模型的负载均衡问题
+
+MoE 模型在 RL 训练中不仅面临上述路由一致性问题，还存在专家负载不均衡导致的 GPU 利用率低下。不同 Token 可能集中选择少数"热门"专家，导致负责这些专家的 GPU 成为瓶颈，而其他 GPU 则处于空闲状态。
+
+> **Salesforce** 在其 SFR-RL 系统中提出了 **流水线同步 RL（Pipelined Synchronous）** 方案：所有 GPU 在 Rollout 和 Training 两个阶段之间交替切换，而非将 GPU 固定分配给某一阶段。此外，针对 MoE 模型，他们引入了 **Least-Loaded Expert Parallelism** 来优化专家的负载均衡。整体系统在内存效率上相比 VERL（FSDP + Context Parallelism）提升了约 250 倍，仅用 16 块 H200 即可训练 120B 参数的 MoE 模型 [\[参考\]](https://www.salesforce.com/blog/efficient-rl-training-agentic-era/)。
+
+### 小模型的推理能力上限
+
+需要注意的是，RL 的本质是**激发模型已有的能力**，而非注入新的知识。模型的基础能力决定了 RL 能够达到的效果上限。
+
+> **Amazon Science** 的实验显示：32B 参数量的模型从 RL 中获益显著，因为模型本身能够生成高质量的交互轨迹（Rollout），形成正反馈循环。但较小的模型面临基础推理能力的限制，例如无法识别不可回答的问题或从相关上下文中提取答案——这种能力的缺失，RL 训练难以弥补。对于基础能力不足的小模型，研究者的建议是通过蒸馏（Distillation）从更强的模型中获取能力，而非单纯增加 RL 训练强度 [\[参考\]](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)。
+
+### 分阶段训练管线
+
+考虑到不同规模模型的特点，一个更稳健的训练策略是采用分阶段管线，而非直接进行 RL 训练。
+
+> **Alibaba 通义团队** 设计了 **CPT → SFT → RL** 的三阶段训练管线：在预训练（CPT）阶段将工具调用的轨迹以文本形式融入训练数据；在 SFT 阶段培养模型的基本推理和工具使用能力；最后在 RL 阶段进行优化。他们发现，如果模型在起步阶段不具备基本的工具使用能力，直接进行 RL 训练往往效果不佳 [\[参考\]](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)。
+
+---
+
+## 实践总结 {#tricks}
+
+下表汇总了各问题的对应解决方案：
+
+| 问题                       | 解决方案                                                                     | 参考                  |
+| -------------------------- | ---------------------------------------------------------------------------- | --------------------- |
+| 训练环境不可复现           | 构建确定性的合成环境                                                          | Alibaba               |
+| 小规模数据定制             | 高质量的小数据（如 72 条）结合 RL 也能取得显著效果                           | Amazon                |
+| 训练初期梯度爆炸           | 检查推理引擎与训练引擎的底层实现一致性（如 Attention Sink 反向传播）           | LinkedIn              |
+| 输出退化为重复乱码         | 采用极简奖励设计（仅奖惩任务成败）；对过长的输出进行过滤                      | Bespoke Labs          |
+| 策略偏离初始模型           | 设置较小的 KL 惩罚（如 0.001）；定期将当前模型设为新的参考模型                | Bespoke Labs          |
+| 输出效率低（步数过多）     | 使用 Gamma-decay 衰减奖励，鼓励以更少步数完成任务                             | Moonshot              |
+| 格式坍塌                   | 采用保守的负样本处理策略，排除因超长截断而未产生最终答案的轨迹              | Alibaba               |
+| 长任务上下文溢出           | 引入上下文管理机制，主动摘要或丢弃无用历史信息                                | Moonshot              |
+| MoE 训练资源利用率低       | 流水线同步 RL + Expert Parallelism；16 块 H200 即可训练 120B MoE              | Salesforce            |
+| MoE 路由不一致             | 注意 MoE 路由非确定性可能破坏 On-policy 假设；排查时需区分根因与表象          | LinkedIn              |
+| 小模型训练效果不佳         | 通过蒸馏提升基础能力后再进行 RL；采用 CPT → SFT → RL 三阶段管线              | Amazon / Alibaba      |
 
 ## 参考资料 {#references}
 
-- Zhu J, Sang H, et al. "[Unlocking Agentic RL Training for GPT-OSS: A Practical Retrospective](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)." Hugging Face Blog, 2026. —— LinkedIn 团队在 GPT-OSS MoE 模型上的 Agentic RL 调试实践，包含 attention sink backward 实现。
-- Zhuang R, Vu T, et al. "[Improving Multi-Turn Tool Use with Reinforcement Learning](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)." Bespoke Labs Blog, 2025. —— GRPO 训练多轮工具调用的详细踩坑记录和稳定性 recipe。
-- Moonshot AI. "[Kimi-Researcher: End-to-End RL Training for Emerging Agentic Capabilities](https://moonshotai.github.io/Kimi-Researcher/)." 2025. —— 端到端 REINFORCE 训练自主研究智能体，包含 partial rollout 和 context management 机制。
-- Tongyi DeepResearch Team. "[Tongyi DeepResearch: From Chatbot to Autonomous Agent](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)." 2025. —— 三阶段 Agentic CPT → SFT → RL 管线，30B MoE 模型的 Deep Research Agent。[GitHub](https://github.com/Alibaba-NLP/DeepResearch)
-- Salesforce AI Research. "[Building Efficient RL Training for the Agentic Era](https://www.salesforce.com/blog/efficient-rl-training-agentic-era/)." 2026. —— SFR-RL 的流水线同步架构和 MoE Expert Parallelism 优化。
-- Subramanian S, Xu P, Wang Y. "[Customizing Multiturn AI Agents with Reinforcement Learning](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)." Amazon Science Blog, 2026. —— 小数据（72 题）RL 定制 Agent 的实践，证明数据质量 > 数量。
+- Zhu J, Sang H, et al. "[Unlocking Agentic RL Training for GPT-OSS: A Practical Retrospective](https://huggingface.co/blog/LinkedIn/gpt-oss-agentic-rl)." Hugging Face Blog, 2026.
+- Zhuang R, Vu T, et al. "[Improving Multi-Turn Tool Use with Reinforcement Learning](https://www.bespokelabs.ai/blog/improving-multi-turn-tool-use-with-reinforcement-learning)." Bespoke Labs Blog, 2025.
+- Moonshot AI. "[Kimi-Researcher: End-to-End RL Training for Emerging Agentic Capabilities](https://moonshotai.github.io/Kimi-Researcher/)." 2025.
+- Tongyi DeepResearch Team. "[Tongyi DeepResearch: From Chatbot to Autonomous Agent](https://tongyi-agent.github.io/blog/introducing-tongyi-deep-research/)." 2025. [GitHub](https://github.com/Alibaba-NLP/DeepResearch)
+- Salesforce AI Research. "[Building Efficient RL Training for the Agentic Era](https://www.salesforce.com/blog/efficient-rl-training-agentic-era/)." 2026.
+- Subramanian S, Xu P, Wang Y. "[Customizing Multiturn AI Agents with Reinforcement Learning](https://www.amazon.science/blog/customizing-multiturn-ai-agents-with-reinforcement-learning)." Amazon Science Blog, 2026.
 
-[^carr_industrial]: Liu T, et al. "[CaRR: Citation-Aware Reinforcement Learning for Reliable Research Reports](https://arxiv.org/abs/2601.06021)." arXiv, 2026. 引用感知奖励，通过验证引用真实性和内容相关性来遏制幻觉引用。
+[^carr_industrial]: Zhang J, Lv X, Feng L, Hou L, Li J. "[Chaining the Evidence: Robust Reinforcement Learning for Deep Search Agents with Citation-Aware Rubric Rewards](https://arxiv.org/abs/2601.06021)." arXiv, 2026.
 
-[^selfrag_industrial]: Asai A, et al. "[Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection](https://arxiv.org/abs/2310.11511)." ICLR 2024. 通过自我反思机制实现检索增强生成与幻觉过滤。
+[^selfrag_industrial]: Asai A, et al. "[Self-RAG: Learning to Retrieve, Generate, and Critique through Self-Reflection](https://arxiv.org/abs/2310.11511)." ICLR 2024.
 
-[^critic_industrial]: Gou Z, et al. "[CRITIC: Large Language Models Can Self-Correct with Tool-Interactive Critiquing](https://arxiv.org/abs/2305.11738)." ICLR 2024. 通过工具交互进行纠错和幻觉检测。
+[^critic_industrial]: Gou Z, et al. "[CRITIC: Large Language Models Can Self-Correct with Tool-Interactive Critiquing](https://arxiv.org/abs/2305.11738)." ICLR 2024.
 
 ---
 
-通过这些血泪坑的梳理，你应该对 Agentic RL 训练有了一个具象的感受：“别整虚的，先跑通、别乱码、快点干活”。下一节，我们将看到这些技术的最前沿综合应用——[深度研究智能体：Deep Research Agent](./deep-research-agent)，看看 Agentic RL 如何训练出能自主进行长程研究的 AI。
+本节梳理了 Agentic RL 训练中的常见工程问题及工业界的解决方案。下一节将介绍这些技术的综合应用——[深度研究智能体：Deep Research Agent](./deep-research-agent)，展示 Agentic RL 如何训练能够自主进行长程研究的智能体。
