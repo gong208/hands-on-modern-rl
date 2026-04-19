@@ -215,4 +215,4 @@ flowchart LR
 
 </details>
 
-训练指标只是表象，真正的魔法藏在 DPO 的数学推导中。为什么"改个 Loss 就能绕过整个 PPO 循环"？为什么不需要 Reward Model 也能训练？让我们深入数学——[DPO 数学推导](./dpo-math)。
+训练指标只是表象，真正的魔法藏在 DPO 的数学推导中。为什么"改个 Loss 就能绕过整个 PPO 循环"？为什么不需要 Reward Model 也能训练？让我们深入数学——[DPO 数学推导](./dpo-theory-and-family)。
