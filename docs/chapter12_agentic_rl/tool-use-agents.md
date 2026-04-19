@@ -215,7 +215,7 @@ Code Agent 的 reward 是**可分的**——10 个单元测试过了 7 个，rew
 
 前面讨论的 Web Agent 和 Code Agent 各有侧重，但有一个工具场景特别重要、也特别有挑战性：**搜索引擎**。搜索和计算器、数据库等工具不同——搜索返回的结果是开放式的、非结构化的，而且"好"的搜索策略极度依赖上下文。问"GRPO 和 PPO 的区别"时，模型不需要搜索；但问"2025 年诺贝尔物理学奖得主是谁"时，模型必须搜索——内部知识可能已经过时。
 
-2025 年，SearchR1[^searchr1]（Jin et al., 819 次引用）开创性地将 RL 引入搜索工具训练，让模型**自主学习何时搜索、搜什么、怎么用搜索结果**。随后 ReSearch[^research]、ToRL[^torl] 等工作从不同角度推进了这一方向。
+2025 年，SearchR1[^searchr1]（Jin et al.）开创性地将 RL 引入搜索工具训练，让模型**自主学习何时搜索、搜什么、怎么用搜索结果**。随后 ReSearch[^research]、ToRL[^torl] 等工作从不同角度推进了这一方向。
 
 ### 为什么 prompting 不够？
 
@@ -366,9 +366,9 @@ def tool_rl_training_loop(
 
 [^webshepherd2]: Chae H, et al. "[Web-Shepherd: Advancing PRMs for Reinforcing Web Agents](https://arxiv.org/abs/2505.15277)." NeurIPS 2025 Spotlight. —— 首个网页导航专用步骤级 PRM，相比 GPT-4o-mini 做判官，成本降至 1/10。
 
-[^searchr1]: Jin B, et al. "[Search-R1: Training LLMs to Reason and Leverage Search Engines with Reinforcement Learning](https://arxiv.org/abs/2503.09516)." arXiv:2503.09516, 2025. 819 次引用。首次将搜索工具使用建模为 RL 问题。[GitHub](https://github.com/PeterGriffinJin/Search-R1)
+[^searchr1]: Jin B, et al. "[Search-R1: Training LLMs to Reason and Leverage Search Engines with Reinforcement Learning](https://arxiv.org/abs/2503.09516)." COLM 2025. 首次将搜索工具使用建模为 RL 问题。[GitHub](https://github.com/PeterGriffinJin/Search-R1)
 
-[^torl]: Li X, et al. "[ToRL: Scaling Tool-Integrated RL](https://arxiv.org/abs/2503.23383)." arXiv:2503.23383, 2025. 131 次引用。将工具使用 RL 扩展到计算工具，发现工具使用的 Scaling Law。
+[^torl]: Li X, et al. "[ToRL: Scaling Tool-Integrated RL](https://arxiv.org/abs/2503.23383)." arXiv:2503.23383, 2025. 将工具使用 RL 扩展到计算工具，发现工具使用的 Scaling Law。
 
 [^research]: Chen M, et al. "[ReSearch: Learning to Reason with Search for LLMs via Reinforcement Learning](https://arxiv.org/abs/2503.19470)." arXiv:2503.19470, 2025. 推理与搜索深度融合框架。
 
