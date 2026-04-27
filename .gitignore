@@ -29,3 +29,4 @@ debug/
 
 # Temporary scripts and files
 temp/
+docs/.vitepress/*

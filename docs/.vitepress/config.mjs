@@ -89,18 +89,18 @@ const zhSidebar = {
       items: [
         {
           text: '第1章：RL初印象',
+          link: '/chapter01_cartpole/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter01_cartpole/intro' },
             { text: '核心原理', link: '/chapter01_cartpole/principles' },
             { text: '训练与指标', link: '/chapter01_cartpole/metrics' }
           ]
         },
         {
           text: '第2章：现代RL初体验',
+          link: '/chapter02_dpo/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter02_dpo/intro' },
             { text: '核心原理', link: '/chapter02_dpo/principles' },
             { text: '训练与指标', link: '/chapter02_dpo/metrics' }
           ]
@@ -113,24 +113,33 @@ const zhSidebar = {
       items: [
         {
           text: '第3章：强化学习理论基础——MDP、价值函数与策略优化',
+          link: '/chapter03_mdp/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter03_mdp/intro' },
             { text: '探索与利用：多臂老虎机', link: '/chapter03_mdp/bandit' },
             { text: '马尔可夫决策过程', link: '/chapter03_mdp/mdp' },
-            { text: '价值函数与贝尔曼方程', link: '/chapter03_mdp/value-bellman' },
-            { text: '价值计算：动态规划、蒙特卡洛与时序差分', link: '/chapter03_mdp/dp-mc-td' },
+            {
+              text: '价值函数与贝尔曼方程',
+              link: '/chapter03_mdp/value-bellman'
+            },
+            {
+              text: '价值计算：动态规划、蒙特卡洛与时序差分',
+              link: '/chapter03_mdp/dp-mc-td'
+            },
             { text: '动作价值函数 Q(s, a)', link: '/chapter03_mdp/value-q' },
-            { text: '策略优化目标 J(θ)', link: '/chapter03_mdp/policy-objective' },
+            {
+              text: '策略优化目标 J(θ)',
+              link: '/chapter03_mdp/policy-objective'
+            },
             { text: '奖励函数设计', link: '/chapter03_mdp/reward-design' },
             { text: '算法范式总览', link: '/chapter03_mdp/panorama' }
           ]
         },
         {
           text: '第4章：Value-Based 方法：Q-Learning 与深度 Q 网络',
+          link: '/chapter04_dqn/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter04_dqn/intro' },
             {
               text: 'Q-Learning：TD 方法 for Q',
               link: '/chapter04_dqn/q-learning'
@@ -162,9 +171,9 @@ const zhSidebar = {
         },
         {
           text: '第5章：Policy-Based 方法：策略梯度与 REINFORCE',
+          link: '/chapter05_policy_gradient/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter05_policy_gradient/intro' },
             {
               text: '动手：摇骰子赌博机',
               link: '/chapter05_policy_gradient/dice-game'
@@ -181,9 +190,9 @@ const zhSidebar = {
         },
         {
           text: '第6章：Actor-Critic 架构',
+          link: '/chapter06_actor_critic/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter06_actor_critic/intro' },
             {
               text: '优势函数',
               link: '/chapter06_actor_critic/advantage-function'
@@ -204,9 +213,9 @@ const zhSidebar = {
         },
         {
           text: '第7章：PPO——稳定训练的艺术',
+          link: '/chapter06_ppo/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter06_ppo/intro' },
             {
               text: '动手：PPO 训练 LunarLander',
               link: '/chapter06_ppo/ppo-lunar-lander'
@@ -230,9 +239,9 @@ const zhSidebar = {
       items: [
         {
           text: '第8章：RLHF 完整流水线',
+          link: '/chapter10_rlhf/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter10_rlhf/intro' },
             {
               text: '动手：亲手制造一场 Reward Hacking',
               link: '/chapter10_rlhf/reward-hacking-hands-on'
@@ -257,9 +266,9 @@ const zhSidebar = {
         },
         {
           text: '第9章：对齐与推理强化（DPO / GRPO / RLVR）',
+          link: '/chapter07_alignment/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter07_alignment/intro' },
             {
               text: '动手：DPO 对齐实验',
               link: '/chapter07_alignment/dpo-hands-on'
@@ -288,9 +297,9 @@ const zhSidebar = {
         },
         {
           text: '第10章：Agentic RL——工具调用、多轮交互与智能体训练',
+          link: '/chapter12_agentic_rl/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter12_agentic_rl/intro' },
             {
               text: '动手：Mini Agent Loop——ORM vs PRM 对比',
               link: '/chapter12_agentic_rl/agent-loop-hands-on'
@@ -341,9 +350,9 @@ const zhSidebar = {
       items: [
         {
           text: '第11章：VLM 强化学习',
+          link: '/chapter11_vlm_rl/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter11_vlm_rl/intro' },
             {
               text: '动手：GRPO 训练 VLM',
               link: '/chapter11_vlm_rl/vlm-grpo-hands-on'
@@ -364,9 +373,9 @@ const zhSidebar = {
         },
         {
           text: '第12章：连续动作算法与具身智能',
+          link: '/chapter09_continuous_control/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter09_continuous_control/intro' },
             {
               text: '动手：PyBullet 机器人仿真',
               link: '/chapter09_continuous_control/pybullet-hands-on'
@@ -395,9 +404,9 @@ const zhSidebar = {
         },
         {
           text: '第13章：未来趋势',
+          link: '/chapter13_future_trends/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/chapter13_future_trends/intro' },
             {
               text: '测试时计算与 RL 推理',
               link: '/chapter13_future_trends/test-time-reasoning'
@@ -432,9 +441,9 @@ const zhSidebar = {
       items: [
         {
           text: '附录A：强化学习训练调试指南',
+          link: '/appendix_common_pitfalls/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/appendix_common_pitfalls/intro' },
             {
               text: '策略崩溃与奖励投机',
               link: '/appendix_common_pitfalls/policy-collapse-reward-hacking'
@@ -447,9 +456,9 @@ const zhSidebar = {
         },
         {
           text: '附录B：RL 工程实践指南',
+          link: '/appendix_industrial_training/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/appendix_industrial_training/intro' },
             {
               text: 'B.1 RL 采样基础设施',
               link: '/appendix_industrial_training/rl-infrastructure'
@@ -486,9 +495,9 @@ const zhSidebar = {
         },
         {
           text: '附录C：算法选型与工程框架',
+          link: '/appendix_algorithm_guide/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/appendix_algorithm_guide/intro' },
             {
               text: '算法选型决策',
               link: '/appendix_algorithm_guide/algorithm-selection'
@@ -505,9 +514,9 @@ const zhSidebar = {
         },
         {
           text: '附录E：数学基础',
+          link: '/appendix_math/intro',
           collapsed: false,
           items: [
-            { text: '章节导览', link: '/appendix_math/intro' },
             { text: 'E.1 线性代数', link: '/appendix_math/linear-algebra' },
             {
               text: 'E.2 概率与统计',
@@ -647,8 +656,7 @@ export default withMermaid(
         'meta',
         {
           property: 'og:description',
-          content:
-            '现代强化学习实战——从代码到原理'
+          content: '现代强化学习实战——从代码到原理'
         }
       ],
       ['meta', { property: 'og:type', content: 'website' }],
@@ -705,7 +713,8 @@ export default withMermaid(
         lang: 'en-US',
         link: '/en/',
         title: 'Hands-on Modern RL',
-        description: 'Modern Reinforcement Learning in Practice — From Code to Theory',
+        description:
+          'Modern Reinforcement Learning in Practice — From Code to Theory',
         themeConfig: {
           nav: enNav,
           sidebar: enSidebar,
