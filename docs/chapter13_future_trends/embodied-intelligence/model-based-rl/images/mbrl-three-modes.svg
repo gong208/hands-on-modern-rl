@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" role="img" aria-labelledby="title desc">
+  <title id="title">Three modes of model-based reinforcement learning</title>
+  <desc id="desc">Three common ways to use a world model in reinforcement learning: data generation, planning, and latent imagination.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#334155"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .card { fill: #fff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .a { fill: #eff6ff; stroke: #2563eb; }
+      .b { fill: #fff7ed; stroke: #ea580c; }
+      .c { fill: #f0fdf4; stroke: #16a34a; }
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .head { font: 700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .small { font: 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .mini { font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #64748b; }
+      .arrow { fill: none; stroke: #334155; stroke-width: 3; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect class="bg" width="1100" height="620"/>
+  <text class="title" x="70" y="62">MBRL 的三种常见用法</text>
+  <text class="small" x="72" y="96">同样是“世界模型”，可以放在训练数据、在线规划或潜空间想象的不同位置。</text>
+
+  <rect class="card a" x="70" y="150" width="300" height="360"/>
+  <text class="head" x="104" y="198">1. 生成训练数据</text>
+  <text class="mini" x="105" y="228">Dyna 风格</text>
+  <rect class="card" x="112" y="275" width="95" height="58"/>
+  <text class="small" x="137" y="311">真实</text>
+  <rect class="card" x="232" y="275" width="95" height="58"/>
+  <text class="small" x="257" y="311">模型</text>
+  <path class="arrow" d="M207 304 L232 304"/>
+  <path class="arrow" d="M280 333 C270 375, 174 378, 158 333"/>
+  <text class="small" x="105" y="417">模型补充 replay 数据</text>
+  <text class="small" x="105" y="449">价值函数反复学习</text>
+
+  <rect class="card b" x="400" y="150" width="300" height="360"/>
+  <text class="head" x="434" y="198">2. 在线规划搜索</text>
+  <text class="mini" x="435" y="228">MPC / MCTS / MuZero</text>
+  <rect class="card" x="450" y="275" width="200" height="58"/>
+  <text class="small" x="485" y="311">候选动作序列</text>
+  <rect class="card" x="450" y="375" width="200" height="58"/>
+  <text class="small" x="492" y="411">最高价值动作</text>
+  <path class="arrow" d="M550 333 L550 375"/>
+  <text class="small" x="435" y="472">只执行第一步</text>
+  <text class="small" x="435" y="504">下一帧重新规划</text>
+
+  <rect class="card c" x="730" y="150" width="300" height="360"/>
+  <text class="head" x="764" y="198">3. 潜空间想象</text>
+  <text class="mini" x="765" y="228">PlaNet / Dreamer / TD-MPC</text>
+  <rect class="card" x="780" y="270" width="200" height="58"/>
+  <text class="small" x="827" y="306">压缩观测</text>
+  <rect class="card" x="780" y="370" width="200" height="58"/>
+  <text class="small" x="818" y="406">想象 rollout</text>
+  <path class="arrow" d="M880 328 L880 370"/>
+  <text class="small" x="765" y="472">不预测每个像素</text>
+  <text class="small" x="765" y="504">只保留控制相关信息</text>
+</svg>

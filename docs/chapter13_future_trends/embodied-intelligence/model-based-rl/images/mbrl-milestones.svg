@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="560" viewBox="0 0 1100 560" role="img" aria-labelledby="title desc">
+  <title id="title">Model-based RL milestones</title>
+  <desc id="desc">A timeline of Dyna, PETS, PlaNet, MuZero, DreamerV3, and TD-MPC2.</desc>
+  <style>
+    .bg { fill: #f8fafc; }
+    .line { stroke: #334155; stroke-width: 5; stroke-linecap: round; }
+    .dot { stroke: #fff; stroke-width: 5; }
+    .card { fill: #fff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+    .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+    .year { font: 700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+    .name { font: 700 20px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+    .small { font: 16px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+  </style>
+  <rect class="bg" width="1100" height="560"/>
+  <text class="title" x="70" y="62">MBRL 关键里程碑</text>
+  <text class="small" x="72" y="94">从经典 Dyna，到潜空间世界模型，再到可扩展的连续控制。</text>
+  <line class="line" x1="110" y1="292" x2="990" y2="292"/>
+
+  <circle class="dot" cx="140" cy="292" r="15" fill="#2563eb"/>
+  <rect class="card" x="70" y="145" width="170" height="104"/>
+  <text class="year" x="103" y="181">1991</text>
+  <text class="name" x="103" y="211">Dyna</text>
+  <text class="small" x="103" y="236">学习 + 规划</text>
+
+  <circle class="dot" cx="340" cy="292" r="15" fill="#ea580c"/>
+  <rect class="card" x="270" y="335" width="180" height="112"/>
+  <text class="year" x="303" y="373">2018</text>
+  <text class="name" x="303" y="403">PETS</text>
+  <text class="small" x="303" y="428">概率模型集成</text>
+
+  <circle class="dot" cx="500" cy="292" r="15" fill="#16a34a"/>
+  <rect class="card" x="430" y="145" width="180" height="112"/>
+  <text class="year" x="463" y="183">2019</text>
+  <text class="name" x="463" y="213">PlaNet</text>
+  <text class="small" x="463" y="238">像素到潜空间</text>
+
+  <circle class="dot" cx="660" cy="292" r="15" fill="#7c3aed"/>
+  <rect class="card" x="590" y="335" width="180" height="112"/>
+  <text class="year" x="623" y="373">2020</text>
+  <text class="name" x="623" y="403">MuZero</text>
+  <text class="small" x="623" y="428">学模型做搜索</text>
+
+  <circle class="dot" cx="820" cy="292" r="15" fill="#0891b2"/>
+  <rect class="card" x="750" y="145" width="190" height="112"/>
+  <text class="year" x="783" y="183">2023</text>
+  <text class="name" x="783" y="213">DreamerV3</text>
+  <text class="small" x="783" y="238">跨域世界模型</text>
+
+  <circle class="dot" cx="970" cy="292" r="15" fill="#db2777"/>
+  <rect class="card" x="880" y="335" width="170" height="112"/>
+  <text class="year" x="913" y="373">2024</text>
+  <text class="name" x="913" y="403">TD-MPC2</text>
+  <text class="small" x="913" y="428">大规模连续控制</text>
+</svg>

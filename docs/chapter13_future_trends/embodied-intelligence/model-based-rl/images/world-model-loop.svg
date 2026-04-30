@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="620" viewBox="0 0 1100 620" role="img" aria-labelledby="title desc">
+  <title id="title">MBRL world model loop</title>
+  <desc id="desc">A model-based reinforcement learning loop showing real interaction, world model learning, imagined rollouts, planning, and policy updates.</desc>
+  <defs>
+    <marker id="arrow-teal" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#0f766e"/>
+    </marker>
+    <marker id="arrow-blue" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#2563eb"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .panel { fill: #ffffff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .real { fill: #ecfeff; stroke: #0891b2; }
+      .model { fill: #fff7ed; stroke: #ea580c; }
+      .imagine { fill: #eef2ff; stroke: #4f46e5; }
+      .plan { fill: #f0fdf4; stroke: #16a34a; }
+      .policy { fill: #fdf2f8; stroke: #db2777; }
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .label { font: 700 24px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .small { font: 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .code { font: 18px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #334155; }
+      .arrow { fill: none; stroke-width: 4; stroke-linecap: round; }
+      .teal { stroke: #0f766e; marker-end: url(#arrow-teal); }
+      .blue { stroke: #2563eb; marker-end: url(#arrow-blue); }
+    </style>
+  </defs>
+  <rect class="bg" x="0" y="0" width="1100" height="620"/>
+  <text class="title" x="70" y="62">基于模型的 RL：把真实试错搬进“脑内世界”</text>
+  <text class="small" x="72" y="96">真实交互用来校准世界模型，世界模型再生成想象轨迹或支持规划。</text>
+
+  <rect class="panel real" x="70" y="170" width="220" height="128"/>
+  <text class="label" x="104" y="218">真实交互</text>
+  <text class="code" x="103" y="252">(s, a, r, s')</text>
+  <text class="small" x="103" y="279">机器人 / 仿真器</text>
+
+  <rect class="panel model" x="440" y="155" width="230" height="158"/>
+  <text class="label" x="475" y="207">世界模型</text>
+  <text class="code" x="475" y="242">p_hat(s', r | s, a)</text>
+  <text class="small" x="475" y="271">学习环境动力学</text>
+
+  <rect class="panel imagine" x="810" y="170" width="220" height="128"/>
+  <text class="label" x="848" y="218">想象轨迹</text>
+  <text class="small" x="848" y="252">rollout in model</text>
+  <text class="small" x="848" y="279">便宜但有误差</text>
+
+  <rect class="panel plan" x="640" y="410" width="220" height="128"/>
+  <text class="label" x="688" y="458">规划搜索</text>
+  <text class="small" x="688" y="492">MPC / MCTS</text>
+  <text class="small" x="688" y="519">选择下一步动作</text>
+
+  <rect class="panel policy" x="245" y="410" width="250" height="128"/>
+  <text class="label" x="291" y="458">策略更新</text>
+  <text class="small" x="291" y="492">actor / critic</text>
+  <text class="small" x="291" y="519">从想象经验学习</text>
+
+  <path class="arrow teal" d="M290 234 C350 214, 380 206, 440 214"/>
+  <path class="arrow teal" d="M670 234 C730 216, 760 216, 810 232"/>
+  <path class="arrow blue" d="M915 298 C920 352, 880 390, 820 413"/>
+  <path class="arrow blue" d="M810 474 C720 565, 580 570, 494 500"/>
+  <path class="arrow teal" d="M245 474 C130 452, 88 362, 151 298"/>
+
+  <text class="small" x="327" y="196">拟合模型</text>
+  <text class="small" x="714" y="197">生成未来</text>
+  <text class="small" x="850" y="360">评估动作序列</text>
+  <text class="small" x="560" y="575">用想象数据优化</text>
+  <text class="small" x="84" y="388">部署动作并收集新数据</text>
+</svg>

@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="640" viewBox="0 0 1100 640" role="img" aria-labelledby="title desc">
+  <title id="title">Dreamer RSSM world model loss</title>
+  <desc id="desc">A diagram of Dreamer RSSM world model learning with posterior, prior, reconstruction, reward, continuation, and imagination actor critic.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto" markerUnits="strokeWidth">
+      <path d="M2,2 L10,6 L2,10 Z" fill="#4f46e5"/>
+    </marker>
+    <style>
+      .bg { fill: #f8fafc; }
+      .box { fill: #fff; stroke: #cbd5e1; stroke-width: 2; rx: 8; }
+      .obs { fill: #ecfeff; stroke: #0891b2; }
+      .state { fill: #eef2ff; stroke: #4f46e5; }
+      .loss { fill: #fff7ed; stroke: #ea580c; }
+      .actor { fill: #f0fdf4; stroke: #16a34a; }
+      .title { font: 700 30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .head { font: 700 22px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #0f172a; }
+      .small { font: 18px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; fill: #475569; }
+      .code { font: 16px ui-monospace, SFMono-Regular, Menlo, monospace; fill: #334155; }
+      .arrow { fill: none; stroke: #4f46e5; stroke-width: 4; stroke-linecap: round; marker-end: url(#arrow); }
+    </style>
+  </defs>
+  <rect class="bg" width="1100" height="640"/>
+  <text class="title" x="70" y="62">Dreamer：先学 RSSM，再在潜空间里训练策略</text>
+  <text class="small" x="72" y="96">RSSM 同时做表征学习、动力学预测和奖励预测；actor-critic 不再依赖真实像素 rollout。</text>
+
+  <rect class="box obs" x="80" y="180" width="205" height="112"/>
+  <text class="head" x="122" y="228">观测编码</text>
+  <text class="code" x="122" y="260">o_t -> e_t</text>
+
+  <rect class="box state" x="385" y="145" width="270" height="88"/>
+  <text class="head" x="430" y="194">posterior</text>
+  <text class="code" x="430" y="218">q(z_t | h_t, o_t)</text>
+  <rect class="box state" x="385" y="285" width="270" height="88"/>
+  <text class="head" x="430" y="334">prior</text>
+  <text class="code" x="430" y="358">p(z_t | h_t)</text>
+
+  <rect class="box loss" x="760" y="125" width="265" height="118"/>
+  <text class="head" x="803" y="173">重建与预测</text>
+  <text class="code" x="803" y="207">o_t, r_t, c_t</text>
+  <rect class="box loss" x="760" y="300" width="265" height="118"/>
+  <text class="head" x="803" y="348">KL 约束</text>
+  <text class="code" x="803" y="382">KL(q || p)</text>
+
+  <rect class="box actor" x="385" y="485" width="270" height="88"/>
+  <text class="head" x="430" y="534">想象 actor-critic</text>
+  <text class="code" x="430" y="558">z_t -> a_t -> z_{t+1}</text>
+
+  <path class="arrow" d="M285 236 C330 205, 348 188, 385 188"/>
+  <path class="arrow" d="M520 233 L520 285"/>
+  <path class="arrow" d="M655 188 C708 180, 728 178, 760 178"/>
+  <path class="arrow" d="M655 329 C708 344, 728 356, 760 360"/>
+  <path class="arrow" d="M520 373 L520 485"/>
+  <path class="arrow" d="M655 530 C735 520, 820 455, 850 418"/>
+
+  <text class="small" x="80" y="600">世界模型训练看真实数据；策略训练主要看模型想象出的 latent trajectory。</text>
+</svg>
