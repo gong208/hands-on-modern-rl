@@ -92,7 +92,7 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/appendix_industrial_training/rl-infrastructure/</loc>
-    <lastmod>2026-04-30T18:02:24.505Z</lastmod>
+    <lastmod>2026-05-01T02:48:55.233Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -536,7 +536,7 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter07_alignment/dpo-theory-and-family/</loc>
-    <lastmod>2026-04-30T17:52:55.992Z</lastmod>
+    <lastmod>2026-05-01T02:42:15.383Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -554,13 +554,13 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter08_grpo_rlvr/grpo-practice-and-mechanism/</loc>
-    <lastmod>2026-04-30T17:59:23.506Z</lastmod>
+    <lastmod>2026-05-01T02:42:34.680Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter08_grpo_rlvr/on-policy-distillation/</loc>
-    <lastmod>2026-04-29T08:28:39.693Z</lastmod>
+    <lastmod>2026-05-01T02:49:31.504Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -626,7 +626,7 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter11_vlm_rl/visual-generation-rl/</loc>
-    <lastmod>2026-04-30T17:59:28.940Z</lastmod>
+    <lastmod>2026-05-01T02:13:35.979Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -722,7 +722,7 @@
   </url>
   <url>
     <loc>https://walkinglabs.github.io/hands-on-modern-rl/chapter13_future_trends/embodied-intelligence/model-based-rl/</loc>
-    <lastmod>2026-04-30T16:55:01.156Z</lastmod>
+    <lastmod>2026-05-01T02:39:35.010Z</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
