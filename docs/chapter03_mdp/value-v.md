@@ -10,13 +10,25 @@
 
 **核心公式**
 
-$$V^\pi(s) = \mathbb{E}_\pi\left[G_t\mid s_t=s\right]$$
+$$
+V^\pi(s) = \mathbb{E}_\pi\left[G_t\mid s_t=s\right] \quad \text{（状态价值函数定义：衡量局面的长期回报）}
+$$
 
-$$V(s) \leftarrow \sum_a \pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right]$$
+$$
+V(s) \leftarrow \sum_a \pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right] \quad \text{（DP 价值更新：用模型加权求价值）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right] \quad \text{（MC 价值更新：用完整回报修正预测）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right] \quad \text{（TD 价值更新：边走边修正价值）}
+$$
+
+**为什么需要这些公式**
+
+这一页继续追问一个很实际的问题：既然 $V(s)$ 表示"这个局面值多少分"，那程序里这个数到底怎么学出来？如果规则全知道，可以用 DP 一格一格算；如果规则不知道，可以用 MC 跑完整局后用真实结果修正；如果连等到结束都太慢，就用 TD 走一步修一步。这里的恍然大悟点是：价值函数不是一开始就准确的评分器，它更像一个不断被训练的预报员。每来一条新经验，它就把原来的预测往真实结果挪一点。后面训练 Critic 时，用的正是这类思想。
 
 上一节我们定义了 MDP 五元组、折扣累积回报 $G_t$ 和策略 $\pi$。现在要回答一个核心问题：**当前的局面对智能体来说到底值多少分？**
 

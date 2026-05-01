@@ -10,13 +10,25 @@
 
 **核心公式**
 
-$$V^\pi(s) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty}\gamma^k r_{t+k}\mid s_t=s\right]$$
+$$
+V^\pi(s) = \mathbb{E}_\pi\left[\sum_{k=0}^{\infty}\gamma^k r_{t+k}\mid s_t=s\right] \quad \text{（状态价值函数定义：定义状态的期望累积回报）}
+$$
 
-$$V^\pi(s) = \sum_{a \in A}\pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'\in S}P(s'\mid s,a)V^\pi(s')\right]$$
+$$
+V^\pi(s) = \sum_{a \in A}\pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'\in S}P(s'\mid s,a)V^\pi(s')\right] \quad \text{（贝尔曼期望方程：给定策略下递归算价值）}
+$$
 
-$$V^*(s) = \max_a\left[R(s,a)+\gamma\sum_{s'\in S}P(s'\mid s,a)V^*(s')\right]$$
+$$
+V^*(s) = \max_a\left[R(s,a)+\gamma\sum_{s'\in S}P(s'\mid s,a)V^*(s')\right] \quad \text{（贝尔曼最优方程：定义最优策略价值）}
+$$
 
-$$\delta = r + \gamma V(s') - V(s)$$
+$$
+\delta = r + \gamma V(s') - V(s) \quad \text{（TD Error：衡量预测和目标的差距）}
+$$
+
+**为什么需要这些公式**
+
+前面定义了 $V(s)$，但定义还不等于会计算。要真按定义算，似乎得把从现在开始所有可能的未来都列出来，这对任何稍微真实一点的任务都不可能。贝尔曼方程的好处是把"看完整个未来"换成"只看一步，再相信下一状态已经有一个价值"。贝尔曼期望方程是在固定策略下算账，贝尔曼最优方程是在每一步都选更好的路。TD Error 则像老师批改作业：你原来猜 $V(s)$ 是多少，现在看到 $r+\gamma V(s')$ 这个更接近现实的一步目标，差值就是该改多少。学到这里会发现，RL 很多更新其实都是在不断修正自己的预判。
 
 上一节我们定义了价值函数 $V(s)$ 和 $Q(s, a)$。但当你真正坐下来想计算 $V(s)$ 的时候，会遇到一个计算上的困难：
 

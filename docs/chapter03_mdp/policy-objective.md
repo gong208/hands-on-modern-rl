@@ -10,13 +10,25 @@
 
 **核心公式**
 
-$$\pi_\theta(a\mid s) = P_\theta(a\mid s)$$
+$$
+\pi_\theta(a\mid s) = P_\theta(a\mid s) \quad \text{（参数化随机策略：用 }\theta\text{ 表示动作分布）}
+$$
 
-$$J(\theta) = \mathbb{E}_{\pi_\theta}\left[G_t\right] = \mathbb{E}_{\pi_\theta}\left[\sum_{t=0}^{\infty}\gamma^t r_t\right]$$
+$$
+J(\theta) = \mathbb{E}_{\pi_\theta}\left[G_t\right] = \mathbb{E}_{\pi_\theta}\left[\sum_{t=0}^{\infty}\gamma^t r_t\right] \quad \text{（策略目标函数：衡量策略平均回报）}
+$$
 
-$$\theta^* = \arg\max_\theta J(\theta)$$
+$$
+\theta^* = \arg\max_\theta J(\theta) \quad \text{（最优策略参数：把学习写成最大化问题）}
+$$
 
-$$\nabla_\theta J(\theta) \propto \mathbb{E}_{\pi_\theta}\left[\nabla_\theta\log\pi_\theta(a\mid s)\cdot G_t\right]$$
+$$
+\nabla_\theta J(\theta) \propto \mathbb{E}_{\pi_\theta}\left[\nabla_\theta\log\pi_\theta(a\mid s)\cdot G_t\right] \quad \text{（策略梯度估计式：提高高回报动作概率）}
+$$
+
+**为什么需要这些公式**
+
+上一节的 Q 路线很直观：给每个动作打分，选最高的。但如果动作不是"左/右"两个按钮，而是机械臂每个关节的连续力矩呢？动作太多了，根本没法一个个打分。于是第二条路线出现了：不先做完整打分表，而是直接训练一个会行动的策略 $\pi_\theta$。$J(\theta)$ 就像这套策略的总成绩，$\theta^*$ 表示我们要找到成绩最高的那组参数，策略梯度告诉我们怎么把带来高分的动作概率调大。读到这里会发现：Policy-based 方法不是比 Q 更玄，而是在动作太多、没法枚举时，换了一种更合适的学习方式。
 
 控制一个机械臂需要给 6 个关节各施加一个力矩。力矩可以是 0 到 10 牛顿米之间的任何实数——动作空间是一个 6 维连续空间，包含无穷多个可能的动作。路线一的思路是给每个动作打分再选最高的，但无穷多个动作意味着无穷多次打分，$\arg\max$ 彻底失灵。
 

@@ -10,13 +10,25 @@
 
 **核心公式**
 
-$$V(s) \leftarrow \sum_a \pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right]$$
+$$
+V(s) \leftarrow \sum_a \pi(a\mid s)\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right] \quad \text{（DP 策略评估更新：已知模型时迭代价值）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right] \quad \text{（MC 价值更新：用完整回报修正估计）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right] \quad \text{（TD(0) 价值更新：一步自举更新价值）}
+$$
 
-$$\delta = r+\gamma V(s')-V(s)$$
+$$
+\delta = r+\gamma V(s')-V(s) \quad \text{（TD Error：提供基础学习信号）}
+$$
+
+**为什么需要这些公式**
+
+上一节告诉我们价值满足贝尔曼方程，但现实里通常没有一本完整的"世界说明书"。如果你真的知道 $P$ 和 $R$，DP 就像拿着答案解析做题，可以直接迭代；如果你不知道规则，但能完整玩完一局，MC 就像考完以后看总分，再回头修正每一步判断；如果一局太长，不想等结束，TD 就像边做题边对答案，走一步改一步。这样看，DP、MC、TD 不是三种互不相关的方法，而是沿着"知道得越来越少，但还想继续学习"这条路发展出来的。读到这里会明白：现代 RL 很多时候靠的不是完美信息，而是不断用新经验修正旧估计。
 
 上一节得到了贝尔曼方程——它给了计算 $V$ 的理论公式。但有个前提：你得知道环境的全部信息（转移概率 $P$、奖励函数 $R$）。CartPole 的物理模型你有，但围棋的 $10^{170}$ 个状态呢？大模型的 token 分布呢？现实中的 $P$ 和 $R$ 几乎总是未知的。
 

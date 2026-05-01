@@ -10,15 +10,29 @@
 
 **核心公式**
 
-$$V(s) \leftarrow \max_a\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right]$$
+$$
+V(s) \leftarrow \max_a\left[R(s,a)+\gamma\sum_{s'}P(s'\mid s,a)V(s')\right] \quad \text{（DP 最优价值更新：已知模型时求最优价值）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[G_t-V(s)\right] \quad \text{（MC 价值更新：用完整回报更新价值）}
+$$
 
-$$V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right]$$
+$$
+V(s) \leftarrow V(s)+\alpha\left[r+\gamma V(s')-V(s)\right] \quad \text{（TD 价值更新：一步采样边走边学）}
+$$
 
-$$Q(s,a) \leftarrow Q(s,a)+\alpha\left[r+\gamma\max_{a'}Q(s',a')-Q(s,a)\right]$$
+$$
+Q(s,a) \leftarrow Q(s,a)+\alpha\left[r+\gamma\max_{a'}Q(s',a')-Q(s,a)\right] \quad \text{（Q-Learning 更新：学习最优动作价值）}
+$$
 
-$$V(s) \approx f(s;\theta)$$
+$$
+V(s) \approx f(s;\theta) \quad \text{（价值函数近似：用函数替代表格）}
+$$
+
+**为什么需要这些公式**
+
+到这里，我们已经有了 MDP、回报、价值、贝尔曼方程、$Q$ 和策略目标。现在要问一个更像工程的问题：这些东西怎么变成能跑的算法？DP 像是"规则全知道，坐在桌前算"；MC 像是"先完整跑一遍，再看结果修正"；TD 像是"边跑边改预测"；Q-Learning 把这种边跑边改用到了动作分数上；函数近似则回答"表格太大装不下怎么办"。这一节串起来看会发现：经典方法不是一堆老算法，而是在一步步减少对理想条件的依赖，让智能体从小格子世界走向真实世界。
 
 在前面的几个小节中，我们一步步搭建了 RL 的理论大厦：MDP 五元组是地基，价值函数是框架，贝尔曼方程是计算工具，TD Error 是学习信号。但理论归理论，怎么把这些数学工具变成能跑的算法？这就是本节要回答的问题。
 

@@ -10,13 +10,25 @@
 
 **核心公式**
 
-$$\mathcal{M} = (\mathcal{S}, \mathcal{A}, P, R, \gamma)$$
+$$
+\mathcal{M} = (\mathcal{S}, \mathcal{A}, P, R, \gamma) \quad \text{（MDP 五元组：统一描述 RL 问题）}
+$$
 
-$$G_t = \sum_{k=0}^{\infty}\gamma^k r_{t+k}$$
+$$
+G_t = \sum_{k=0}^{\infty}\gamma^k r_{t+k} \quad \text{（折扣累积回报：定义从 }t\text{ 开始的总收益）}
+$$
 
-$$V^\pi(s) = \mathbb{E}_\pi[G_t \mid s_t=s], \qquad Q^\pi(s,a) = \mathbb{E}_\pi[G_t \mid s_t=s, a_t=a]$$
+$$
+V^\pi(s) = \mathbb{E}_\pi[G_t \mid s_t=s], \quad Q^\pi(s,a) = \mathbb{E}_\pi[G_t \mid s_t=s, a_t=a] \quad \text{（状态价值与动作价值：把回报分配到状态和动作）}
+$$
 
-$$V^\pi(s) = \sum_a \pi(a\mid s)Q^\pi(s,a)$$
+$$
+V^\pi(s) = \sum_a \pi(a\mid s)Q^\pi(s,a) \quad \text{（V-Q 关系式：用动作价值求状态价值）}
+$$
+
+**为什么需要这些公式**
+
+如果说前一节是在给 RL 问题画地图，这一页就是把地图上的几个坐标对齐。先用 MDP 五元组说清"游戏规则"，再用 $G_t$ 说清"从现在开始一共能拿多少分"，然后自然会问：这个总分应该算在局面头上，还是算在动作头上？这就是 $V^\pi(s)$ 和 $Q^\pi(s,a)$ 的区别。最后那条 $V$-$Q$ 关系式会让人恍然大悟：一个局面的价值，其实就是这个局面下各个动作价值的加权平均。也就是说，状态、动作、策略、价值不是四个孤立词，它们是在描述同一件事的不同角度。
 
 上一节我们用两台老虎机体验了 RL 的基本交互模式：选择动作，获得奖励，循环往复。但体验归体验——你能直觉地说出"状态"到底是什么吗？"策略"和"奖励"之间是什么关系？为什么有的任务需要一个叫 $\gamma$ 的参数，有的却不需要？
 
