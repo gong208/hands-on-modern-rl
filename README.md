@@ -24,7 +24,7 @@
     <a href="#实验代码">实验代码</a> ·
     <a href="#快速开始">快速开始</a> ·
     <a href="#参与贡献">参与贡献</a> ·
-    <a href="#讨论群">讨论群</a>
+    <a href="#wechat-group">WeChat Group</a>
   </p>
 </div>
 
@@ -121,7 +121,7 @@
 - [开发命令](#开发命令)
 - [参与贡献](#参与贡献)
 - [其他课程](#其他课程)
-- [讨论群](#讨论群)
+- [WeChat Group](#wechat-group)
 - [引用](#引用)
 - [开源协议](#开源协议)
 
@@ -483,11 +483,11 @@ npm run verify        # 运行格式检查、Lint、构建和产物验证
 
 [![LEARN HARNESS ENGINEERING](https://img.shields.io/badge/LEARN_HARNESS_ENGINEERING-0052cc?style=for-the-badge)](https://github.com/walkinglabs/learn-harness-engineering)
 
-## 讨论群
+## WeChat Group
 
-欢迎扫码加入我们的讨论群：
+欢迎扫码加入我们的 WeChat Group：
 
-<img src="https://github.com/walkinglabs/.github/raw/main/profile/wechat.png" alt="讨论群" width="300" />
+<img src="https://github.com/walkinglabs/.github/raw/main/profile/wechat.png" alt="WeChat Group" width="300" />
 
 ## 引用
 
