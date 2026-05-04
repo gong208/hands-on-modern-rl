@@ -7,6 +7,7 @@
     "dev": "vitepress dev docs",
     "build": "npm run assets:optimize && npm run sitemap && vitepress build docs",
     "build:force": "npm run assets:optimize && npm run sitemap && vitepress build docs --force",
+    "pdf:build": "node scripts/build-pdf.mjs",
     "preview": "vitepress preview docs",
     "assets:optimize": "node scripts/optimize-assets.mjs",
     "format": "prettier --write .",

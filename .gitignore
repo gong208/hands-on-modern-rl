@@ -36,3 +36,4 @@ debug/
 # Temporary scripts and files
 temp/
 docs/.vitepress/*
+docs/__pdf__/

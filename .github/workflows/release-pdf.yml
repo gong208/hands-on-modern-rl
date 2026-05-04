@@ -1,0 +1,82 @@
+name: Build PDF release asset
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types:
+      - published
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag/release name to create or update
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-pdf-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  PDF_PATH: docs/.vitepress/dist/hands-on-modern-rl.pdf
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.tag }}" >> "$GITHUB_OUTPUT"
+          elif [ "${{ github.event_name }}" = "release" ]; then
+            echo "tag=${{ github.event.release.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ steps.release.outputs.tag }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install image rendering tools
+        run: sudo apt-get update && sudo apt-get install -y webp
+
+      - name: Setup Chrome for PDF rendering
+        id: setup-chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Build PDF
+        run: npm run pdf:build
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PUPPETEER_EXECUTABLE_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+
+      - name: Create release if needed
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.release.outputs.tag }}
+        run: |
+          gh release view "$TAG_NAME" >/dev/null 2>&1 || \
+            gh release create "$TAG_NAME" --title "$TAG_NAME" --generate-notes
+
+      - name: Upload PDF release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_NAME: ${{ steps.release.outputs.tag }}
+        run: gh release upload "$TAG_NAME" "$PDF_PATH#Hands-on Modern RL PDF" --clobber
