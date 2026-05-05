@@ -4,20 +4,12 @@ on:
   push:
     tags:
       - 'v*'
-  release:
-    types:
-      - published
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: Existing tag/release name to create or update
-        required: true
 
 permissions:
   contents: write
 
 concurrency:
-  group: release-pdf-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+  group: release-pdf-${{ github.ref_name }}
   cancel-in-progress: false
 
 env:
@@ -32,13 +24,7 @@ jobs:
       - name: Resolve release tag
         id: release
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            tag="${{ inputs.tag }}"
-          elif [ "${{ github.event_name }}" = "release" ]; then
-            tag="${{ github.event.release.tag_name }}"
-          else
-            tag="${GITHUB_REF_NAME}"
-          fi
+          tag="${GITHUB_REF_NAME}"
           echo "tag=${tag}" >> "$GITHUB_OUTPUT"
           echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
