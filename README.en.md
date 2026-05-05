@@ -473,6 +473,16 @@ When adding content:
 
 For repository-specific maintenance rules, see [`AGENTS.md`](AGENTS.md).
 
+## Star History
+
+<a href="https://star-history.com/#walkinglabs/hands-on-modern-rl&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date" />
+  </picture>
+</a>
+
 ## Citation
 
 If you use this course in teaching materials, study notes, or derivative non-commercial educational work, please cite the repository:

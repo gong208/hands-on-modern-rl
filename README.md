@@ -124,6 +124,7 @@
 - [仓库结构](#仓库结构)
 - [开发命令](#开发命令)
 - [参与贡献](#参与贡献)
+- [Star History](#star-history)
 - [其他课程](#其他课程)
 - [WeChat Group](#wechat-group)
 - [引用](#引用)
@@ -480,6 +481,16 @@ npm run verify        # 运行格式检查、Lint、构建和产物验证
 6. 使用 Conventional Commits 规范，例如 `docs: clarify ppo clipping` 或 `fix: repair chapter link`。
 
 有关特定于本仓库的维护规则，请参阅 [`AGENTS.md`](AGENTS.md)。
+
+## Star History
+
+<a href="https://star-history.com/#walkinglabs/hands-on-modern-rl&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date" />
+    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=walkinglabs/hands-on-modern-rl&type=Date" />
+  </picture>
+</a>
 
 ## 其他课程
 
