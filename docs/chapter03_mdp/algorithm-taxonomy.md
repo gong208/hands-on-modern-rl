@@ -1,4 +1,4 @@
-# 算法数据从哪里来——On-policy、Off-policy 与 Offline RL
+# 3.7 算法数据来源
 
 ## 本节导读
 

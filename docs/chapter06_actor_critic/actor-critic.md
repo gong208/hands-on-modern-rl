@@ -1,4 +1,4 @@
-# Actor-Critic 架构
+# 6.3 Actor-Critic 架构
 
 上一节我们介绍了优势函数 $A(s,a)$ 和 Critic 的训练方法。现在让我们把所有零件组装起来，看看 Actor 和 Critic 是如何协作的。
 

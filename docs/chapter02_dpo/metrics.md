@@ -1,4 +1,4 @@
-# Loss、Reward Margin 与 Accuracy
+# 2.2 Loss、Reward Margin 与 Accuracy
 
 在上一节 2.5.2 中，我们推导了 DPO 的损失函数。本节回到实验层面，解读 `DPOTrainer.train()` 在训练过程中输出的各项指标。
 

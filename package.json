@@ -15,7 +15,8 @@
     "lint": "eslint docs/.vitepress/theme",
     "lint:fix": "eslint docs/.vitepress/theme --fix",
     "verify": "bash scripts/verify.sh",
-    "sitemap": "node scripts/generate-sitemap.mjs"
+    "sitemap": "node scripts/generate-sitemap.mjs",
+    "fix:headings": "node scripts/fix-heading-numbers.mjs"
   },
   "keywords": [
     "walkinglabs",
