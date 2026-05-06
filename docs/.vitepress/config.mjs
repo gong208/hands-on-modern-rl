@@ -913,6 +913,17 @@ const zhSidebar = {
           ]
         },
         {
+          text: 'C. 手写代码速记',
+          link: '/appendix_code_cheatsheet/intro',
+          collapsed: false,
+          items: [
+            { text: 'C.1 SFT Loss 与 KL 散度', link: '/appendix_code_cheatsheet/sft-kl' },
+            { text: 'C.2 PPO 策略损失与 GAE', link: '/appendix_code_cheatsheet/ppo-gae' },
+            { text: 'C.3 DPO 及其变体', link: '/appendix_code_cheatsheet/dpo-family' },
+            { text: 'C.4 GRPO 与 Reward Model', link: '/appendix_code_cheatsheet/grpo-rlvr' }
+          ]
+        },
+        {
           text: 'D. 学习资料与复现项目推荐',
           link: '/appendix_game_projects/intro'
         },
