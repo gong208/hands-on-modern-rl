@@ -286,7 +286,7 @@ function initMediumZoom() {
   if (zoom) zoom.detach()
   zoom = mediumZoom('.main img', {
     background: 'var(--vp-c-bg)',
-    margin: 24,
+    margin: 24
   })
 }
 
@@ -606,7 +606,8 @@ watch(
   font-size: 13px;
   font-weight: 500;
   letter-spacing: 0.02em;
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
   cursor: pointer;
@@ -619,7 +620,8 @@ watch(
 .ct-reading-tools-button:hover {
   border-color: rgba(15, 118, 110, 0.4);
   color: var(--vp-c-brand-1);
-  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 3px 4px 0 rgba(0, 0, 0, 0.14),
     0 3px 3px -2px rgba(0, 0, 0, 0.2),
     0 1px 8px 0 rgba(0, 0, 0, 0.12);
 }
@@ -633,7 +635,8 @@ watch(
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
   z-index: 40;
@@ -761,7 +764,8 @@ watch(
   border-radius: 0 4px 4px 0;
   background: rgba(255, 255, 255, 0.92);
   color: var(--vp-c-text-3);
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.14),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.14),
     0 3px 1px -2px rgba(0, 0, 0, 0.2),
     0 1px 5px 0 rgba(0, 0, 0, 0.12);
   cursor: pointer;
@@ -821,7 +825,8 @@ watch(
 .dark .ct-sidebar-toggle-btn {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(30, 30, 40, 0.92);
-  box-shadow: 0 2px 2px 0 rgba(0, 0, 0, 0.3),
+  box-shadow:
+    0 2px 2px 0 rgba(0, 0, 0, 0.3),
     0 3px 1px -2px rgba(0, 0, 0, 0.4),
     0 1px 5px 0 rgba(0, 0, 0, 0.25);
 }

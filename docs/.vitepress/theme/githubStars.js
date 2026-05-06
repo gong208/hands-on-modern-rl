@@ -17,28 +17,31 @@ export function initGithubStars(theme) {
     .then((data) => {
       if (data.stargazers_count !== undefined) {
         const stars = data.stargazers_count
-        const formatStars = (num) => (num > 999 ? (num / 1000).toFixed(1) + 'k' : num)
+        const formatStars = (num) =>
+          num > 999 ? (num / 1000).toFixed(1) + 'k' : num
         const starsText = formatStars(stars)
 
         const injectStars = () => {
-          document.querySelectorAll('.VPSocialLink[href*="github.com"]').forEach((el) => {
-            if (!el.querySelector('.ct-github-stars')) {
-              const span = document.createElement('span')
-              span.className = 'ct-github-stars'
-              span.textContent = starsText
+          document
+            .querySelectorAll('.VPSocialLink[href*="github.com"]')
+            .forEach((el) => {
+              if (!el.querySelector('.ct-github-stars')) {
+                const span = document.createElement('span')
+                span.className = 'ct-github-stars'
+                span.textContent = starsText
 
-              el.appendChild(span)
+                el.appendChild(span)
 
-              el.style.width = 'auto'
-              el.style.padding = '0 8px'
-              el.style.textDecoration = 'none'
-              el.style.gap = '6px'
+                el.style.width = 'auto'
+                el.style.padding = '0 8px'
+                el.style.textDecoration = 'none'
+                el.style.gap = '6px'
 
-              span.style.fontSize = '13px'
-              span.style.fontWeight = '500'
-              span.style.fontFamily = 'var(--vp-font-family-base)'
-            }
-          })
+                span.style.fontSize = '13px'
+                span.style.fontWeight = '500'
+                span.style.fontFamily = 'var(--vp-font-family-base)'
+              }
+            })
         }
 
         const observer = new MutationObserver(injectStars)

@@ -224,7 +224,10 @@ function mathInline(state, silent) {
   const max = state.posMax
   let match = start
   while ((match = state.src.indexOf('$', match)) !== -1) {
-    if (match >= max) { match = -1; break }
+    if (match >= max) {
+      match = -1
+      break
+    }
     let pos = match - 1
     while (state.src[pos] === '\\') pos -= 1
     if ((match - pos) % 2 === 1) break
@@ -380,7 +383,9 @@ function safeHeadingAttrs(md) {
       }
 
       const children = inline.children || []
-      const lastText = [...children].reverse().find((token) => token.type === 'text')
+      const lastText = [...children]
+        .reverse()
+        .find((token) => token.type === 'text')
       if (!lastText) continue
 
       const match = lastText.content.match(
@@ -410,7 +415,9 @@ function safeHeadingAttrs(md) {
 }
 
 function isExternalAsset(value) {
-  return /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(value) || value.startsWith('data:')
+  return (
+    /^(?:[a-z][a-z0-9+.-]*:)?\/\//i.test(value) || value.startsWith('data:')
+  )
 }
 
 function resolveMarkdownAsset(relativePagePath, src) {
@@ -418,7 +425,9 @@ function resolveMarkdownAsset(relativePagePath, src) {
 
   const hashIndex = src.indexOf('#')
   const queryIndex = src.indexOf('?')
-  const suffixIndexCandidates = [hashIndex, queryIndex].filter((idx) => idx >= 0)
+  const suffixIndexCandidates = [hashIndex, queryIndex].filter(
+    (idx) => idx >= 0
+  )
   const suffixIndex = suffixIndexCandidates.length
     ? Math.min(...suffixIndexCandidates)
     : -1
@@ -587,7 +596,10 @@ const zhSidebar = {
           link: '/chapter03_mdp/intro',
           collapsed: false,
           items: [
-            { text: '3.1 两台老虎机：RL 的最小问题', link: '/chapter03_mdp/bandit' },
+            {
+              text: '3.1 两台老虎机：RL 的最小问题',
+              link: '/chapter03_mdp/bandit'
+            },
             { text: '3.2 MDP：RL 的形式化框架', link: '/chapter03_mdp/mdp' },
             {
               text: '3.3 V(s) 与贝尔曼方程',
@@ -606,7 +618,10 @@ const zhSidebar = {
               text: '3.7 算法数据来源',
               link: '/chapter03_mdp/algorithm-taxonomy'
             },
-            { text: '3.8 Reward Shaping', link: '/chapter03_mdp/reward-design' },
+            {
+              text: '3.8 Reward Shaping',
+              link: '/chapter03_mdp/reward-design'
+            },
             { text: '3.9 本章总结', link: '/chapter03_mdp/panorama' }
           ]
         },
@@ -623,7 +638,10 @@ const zhSidebar = {
               text: '4.2 为什么需要 DQN',
               link: '/chapter04_dqn/from-q-to-dqn'
             },
-            { text: '4.3 Replay、Target 与 CNN', link: '/chapter04_dqn/dqn-components' },
+            {
+              text: '4.3 Replay、Target 与 CNN',
+              link: '/chapter04_dqn/dqn-components'
+            },
             {
               text: '4.4 训练过程分析',
               link: '/chapter04_dqn/training-analysis'
@@ -632,7 +650,10 @@ const zhSidebar = {
               text: '4.5 Mountain Car 与稀疏奖励',
               link: '/chapter04_dqn/mountain-car'
             },
-            { text: '4.6 Double、Dueling 与 Rainbow', link: '/chapter04_dqn/dqn-family' },
+            {
+              text: '4.6 Double、Dueling 与 Rainbow',
+              link: '/chapter04_dqn/dqn-family'
+            },
             {
               text: '4.7 项目：DQN 实战与视觉游戏',
               link: '/chapter04_dqn/visual-game-projects'
@@ -917,10 +938,22 @@ const zhSidebar = {
           link: '/appendix_code_cheatsheet/intro',
           collapsed: false,
           items: [
-            { text: 'C.1 SFT Loss 与 KL 散度', link: '/appendix_code_cheatsheet/sft-kl' },
-            { text: 'C.2 PPO 策略损失与 GAE', link: '/appendix_code_cheatsheet/ppo-gae' },
-            { text: 'C.3 DPO 及其变体', link: '/appendix_code_cheatsheet/dpo-family' },
-            { text: 'C.4 GRPO 与 Reward Model', link: '/appendix_code_cheatsheet/grpo-rlvr' }
+            {
+              text: 'C.1 SFT Loss 与 KL 散度',
+              link: '/appendix_code_cheatsheet/sft-kl'
+            },
+            {
+              text: 'C.2 PPO 策略损失与 GAE',
+              link: '/appendix_code_cheatsheet/ppo-gae'
+            },
+            {
+              text: 'C.3 DPO 及其变体',
+              link: '/appendix_code_cheatsheet/dpo-family'
+            },
+            {
+              text: 'C.4 GRPO 与 Reward Model',
+              link: '/appendix_code_cheatsheet/grpo-rlvr'
+            }
           ]
         },
         {
@@ -937,11 +970,26 @@ const zhSidebar = {
               link: '/appendix_math/linear-algebra',
               collapsed: true,
               items: [
-                { text: '基础对象', link: '/appendix_math/linear-algebra-basics' },
-                { text: '贝尔曼矩阵', link: '/appendix_math/linear-algebra-bellman' },
-                { text: '函数近似', link: '/appendix_math/linear-algebra-function-approx' },
-                { text: '收敛与信任域', link: '/appendix_math/linear-algebra-advanced' },
-                { text: '公式与练习', link: '/appendix_math/linear-algebra-formulas-exercises' }
+                {
+                  text: '基础对象',
+                  link: '/appendix_math/linear-algebra-basics'
+                },
+                {
+                  text: '贝尔曼矩阵',
+                  link: '/appendix_math/linear-algebra-bellman'
+                },
+                {
+                  text: '函数近似',
+                  link: '/appendix_math/linear-algebra-function-approx'
+                },
+                {
+                  text: '收敛与信任域',
+                  link: '/appendix_math/linear-algebra-advanced'
+                },
+                {
+                  text: '公式与练习',
+                  link: '/appendix_math/linear-algebra-formulas-exercises'
+                }
               ]
             },
             {
@@ -950,11 +998,26 @@ const zhSidebar = {
               collapsed: true,
               items: [
                 { text: '概率基础', link: '/appendix_math/probability-basics' },
-                { text: '回报与价值', link: '/appendix_math/probability-value' },
-                { text: '采样估计', link: '/appendix_math/probability-sampling' },
-                { text: '轨迹与 GAE', link: '/appendix_math/probability-trajectory-td' },
-                { text: '贝尔曼期望', link: '/appendix_math/probability-bellman-advanced' },
-                { text: '公式与练习', link: '/appendix_math/probability-formulas-exercises' }
+                {
+                  text: '回报与价值',
+                  link: '/appendix_math/probability-value'
+                },
+                {
+                  text: '采样估计',
+                  link: '/appendix_math/probability-sampling'
+                },
+                {
+                  text: '轨迹与 GAE',
+                  link: '/appendix_math/probability-trajectory-td'
+                },
+                {
+                  text: '贝尔曼期望',
+                  link: '/appendix_math/probability-bellman-advanced'
+                },
+                {
+                  text: '公式与练习',
+                  link: '/appendix_math/probability-formulas-exercises'
+                }
               ]
             },
             {
@@ -963,11 +1026,23 @@ const zhSidebar = {
               collapsed: true,
               items: [
                 { text: '导数与梯度', link: '/appendix_math/calculus-basics' },
-                { text: '策略梯度', link: '/appendix_math/calculus-policy-gradient' },
+                {
+                  text: '策略梯度',
+                  link: '/appendix_math/calculus-policy-gradient'
+                },
                 { text: 'PPO 与 Adam', link: '/appendix_math/calculus-ppo' },
-                { text: '推导工具', link: '/appendix_math/calculus-derivations' },
-                { text: '完整公式', link: '/appendix_math/calculus-advanced-formulas' },
-                { text: '公式与练习', link: '/appendix_math/calculus-formulas-exercises' }
+                {
+                  text: '推导工具',
+                  link: '/appendix_math/calculus-derivations'
+                },
+                {
+                  text: '完整公式',
+                  link: '/appendix_math/calculus-advanced-formulas'
+                },
+                {
+                  text: '公式与练习',
+                  link: '/appendix_math/calculus-formulas-exercises'
+                }
               ]
             },
             {
@@ -976,11 +1051,26 @@ const zhSidebar = {
               collapsed: true,
               items: [
                 { text: '熵与探索', link: '/appendix_math/information-basics' },
-                { text: '交叉熵与 KL', link: '/appendix_math/information-cross-entropy-kl' },
-                { text: 'RLHF 与 DPO', link: '/appendix_math/information-rlhf-dpo' },
-                { text: '互信息', link: '/appendix_math/information-mutual-info' },
-                { text: '完整公式', link: '/appendix_math/information-advanced-formulas' },
-                { text: '公式与练习', link: '/appendix_math/information-formulas-exercises' }
+                {
+                  text: '交叉熵与 KL',
+                  link: '/appendix_math/information-cross-entropy-kl'
+                },
+                {
+                  text: 'RLHF 与 DPO',
+                  link: '/appendix_math/information-rlhf-dpo'
+                },
+                {
+                  text: '互信息',
+                  link: '/appendix_math/information-mutual-info'
+                },
+                {
+                  text: '完整公式',
+                  link: '/appendix_math/information-advanced-formulas'
+                },
+                {
+                  text: '公式与练习',
+                  link: '/appendix_math/information-formulas-exercises'
+                }
               ]
             }
           ]
@@ -1071,202 +1161,203 @@ logger.warn = (msg, options) => {
 }
 
 export default defineConfig({
-    lang: 'zh-CN',
-    title: 'Hands-on Modern RL',
-    description: '现代强化学习实战指南：涵盖经典控制、LLM 后训练、RLVR 与多模态智能体',
-    base,
-    cleanUrls: true,
-    lastUpdated: true,
-    markdown: {
-      image: {
-        lazyLoading: true
-      },
-      attrs: {
-        disable: true
-      },
-      config: (md) => {
-        safeHeadingAttrs(md)
-        optimizedImagesPlugin(md)
-        md.use(markdownItFootnote)
-        katexMarkdown(md)
-        MermaidMarkdown(md)
-        optimizedMermaidPlugin(md)
-        // Custom "output" container for displaying code running results
-        md.use(markdownItContainer, 'output', {
-          render: function (tokens, idx) {
-            if (tokens[idx].nesting === 1) {
-              const title = tokens[idx].info.trim().slice(6).trim() || '运行结果'
-              return `<div class="custom-block output"><p class="custom-block-title">${title}</p>\n`
-            }
-            return '</div>\n'
-          }
-        })
-      }
+  lang: 'zh-CN',
+  title: 'Hands-on Modern RL',
+  description:
+    '现代强化学习实战指南：涵盖经典控制、LLM 后训练、RLVR 与多模态智能体',
+  base,
+  cleanUrls: true,
+  lastUpdated: true,
+  markdown: {
+    image: {
+      lazyLoading: true
     },
-    vite: {
-      customLogger: logger,
-      plugins: [mermaidConfigPlugin(), normalizeBrokenDocPathPlugin()],
-      optimizeDeps: {
-        include: [
-          '@braintree/sanitize-url',
-          'cytoscape',
-          'cytoscape-cose-bilkent',
-          'dayjs',
-          'debug'
-        ]
-      },
-      resolve: {
-        alias: {
-          'dayjs/plugin/advancedFormat.js':
-            'dayjs/esm/plugin/advancedFormat',
-          'dayjs/plugin/customParseFormat.js':
-            'dayjs/esm/plugin/customParseFormat',
-          'dayjs/plugin/isoWeek.js': 'dayjs/esm/plugin/isoWeek',
-          'cytoscape/dist/cytoscape.umd.js': 'cytoscape/dist/cytoscape.esm.js'
-        }
-      }
+    attrs: {
+      disable: true
     },
-    ignoreDeadLinks: true,
-    head: [
-      ['link', { rel: 'icon', href: `${base}favicon.svg` }],
-      ['meta', { name: 'theme-color', content: '#3f51b5' }],
-      [
-        'meta',
-        { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }
-      ],
-      ['meta', { name: 'author', content: 'WalkingLabs' }],
-      ['meta', { name: 'robots', content: 'index,follow' }],
-      ['meta', { property: 'og:title', content: 'Hands-on Modern RL' }],
-      [
-        'meta',
-        {
-          property: 'og:description',
-          content: '现代强化学习实战指南：涵盖经典控制、LLM 后训练、RLVR 与多模态智能体'
-        }
-      ],
-      ['meta', { property: 'og:type', content: 'website' }],
-      ['meta', { property: 'og:url', content: siteUrl }],
-      ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
-    ],
-    locales: {
-      zh: {
-        label: '简体中文',
-        lang: 'zh-CN',
-        link: '/zh/',
-        title: 'Hands-on Modern RL',
-        description: '现代强化学习实战——从代码到原理',
-        themeConfig: {
-          nav: zhNav,
-          sidebar: zhSidebar,
-          editLink: {
-            pattern: editLinkPattern,
-            text: '在 GitHub 上编辑此页'
-          },
-          footer: {
-            message: '现代强化学习实战课程',
-            copyright: 'Copyright © WalkingLabs'
-          },
-          outline: {
-            level: [2, 3],
-            label: 'Outline'
-          },
-          lastUpdated: {
-            text: '最后更新'
-          },
-          docFooter: {
-            prev: '上一页',
-            next: '下一页'
-          },
-          darkModeSwitchLabel: '外观',
-          lightModeSwitchTitle: '切换到浅色模式',
-          darkModeSwitchTitle: '切换到深色模式',
-          sidebarMenuLabel: '菜单',
-          returnToTopLabel: '返回顶部',
-          langMenuLabel: '切换语言',
-          skipToContentLabel: '跳转到正文',
-          notFound: {
-            title: '页面未找到',
-            quote: '这个地址不存在，试试从中文首页重新进入。',
-            link: '/zh/',
-            linkText: '返回中文首页',
-            linkLabel: '返回中文首页'
+    config: (md) => {
+      safeHeadingAttrs(md)
+      optimizedImagesPlugin(md)
+      md.use(markdownItFootnote)
+      katexMarkdown(md)
+      MermaidMarkdown(md)
+      optimizedMermaidPlugin(md)
+      // Custom "output" container for displaying code running results
+      md.use(markdownItContainer, 'output', {
+        render: function (tokens, idx) {
+          if (tokens[idx].nesting === 1) {
+            const title = tokens[idx].info.trim().slice(6).trim() || '运行结果'
+            return `<div class="custom-block output"><p class="custom-block-title">${title}</p>\n`
           }
+          return '</div>\n'
         }
-      },
-      en: {
-        label: 'English',
-        lang: 'en-US',
-        link: '/en/',
-        title: 'Hands-on Modern RL',
-        description:
-          'Modern Reinforcement Learning in Practice — From Code to Theory',
-        themeConfig: {
-          nav: enNav,
-          sidebar: enSidebar,
-          editLink: {
-            pattern: editLinkPattern,
-            text: 'Edit this page on GitHub'
-          },
-          footer: {
-            message: '现代强化学习实战课程',
-            copyright: 'Copyright © WalkingLabs'
-          },
-          outline: {
-            level: [2, 3],
-            label: 'Outline'
-          },
-          lastUpdated: {
-            text: 'Last updated'
-          },
-          docFooter: {
-            prev: 'Previous page',
-            next: 'Next page'
-          },
-          darkModeSwitchLabel: 'Appearance',
-          lightModeSwitchTitle: 'Switch to light theme',
-          darkModeSwitchTitle: 'Switch to dark theme',
-          sidebarMenuLabel: 'Menu',
-          returnToTopLabel: 'Return to top',
-          langMenuLabel: 'Change language',
-          skipToContentLabel: 'Skip to content',
-          notFound: {
-            title: 'Page not found',
-            quote:
-              'This page is missing. Try jumping back in from the English home page.',
-            link: '/en/',
-            linkText: 'Take me to English home',
-            linkLabel: 'Go to English home'
-          }
-        }
-      }
+      })
+    }
+  },
+  vite: {
+    customLogger: logger,
+    plugins: [mermaidConfigPlugin(), normalizeBrokenDocPathPlugin()],
+    optimizeDeps: {
+      include: [
+        '@braintree/sanitize-url',
+        'cytoscape',
+        'cytoscape-cose-bilkent',
+        'dayjs',
+        'debug'
+      ]
     },
-    themeConfig: {
-      logo: '/readme/logo.png',
-      siteTitle: 'Hands-on Modern RL',
-      nav: zhNav,
-      sidebar: zhSidebar,
-      socialLinks: [
-        { icon: 'github', link: `https://github.com/${owner}/${repo}` }
-      ],
-      search: enableLocalSearch
-        ? {
-            provider: 'local',
-            options: {
-              _render: renderSearchMarkdown
-            }
-          }
-        : undefined,
-      editLink: {
-        pattern: editLinkPattern,
-        text: 'Edit this page on GitHub'
-      },
-      footer: {
-        message: 'Built for reusable bilingual course delivery',
-        copyright: 'Copyright © WalkingLabs'
-      },
-      outline: {
-        level: [2, 3],
-        label: 'Outline'
+    resolve: {
+      alias: {
+        'dayjs/plugin/advancedFormat.js': 'dayjs/esm/plugin/advancedFormat',
+        'dayjs/plugin/customParseFormat.js':
+          'dayjs/esm/plugin/customParseFormat',
+        'dayjs/plugin/isoWeek.js': 'dayjs/esm/plugin/isoWeek',
+        'cytoscape/dist/cytoscape.umd.js': 'cytoscape/dist/cytoscape.esm.js'
       }
     }
+  },
+  ignoreDeadLinks: true,
+  head: [
+    ['link', { rel: 'icon', href: `${base}favicon.svg` }],
+    ['meta', { name: 'theme-color', content: '#3f51b5' }],
+    [
+      'meta',
+      { name: 'viewport', content: 'width=device-width, initial-scale=1.0' }
+    ],
+    ['meta', { name: 'author', content: 'WalkingLabs' }],
+    ['meta', { name: 'robots', content: 'index,follow' }],
+    ['meta', { property: 'og:title', content: 'Hands-on Modern RL' }],
+    [
+      'meta',
+      {
+        property: 'og:description',
+        content:
+          '现代强化学习实战指南：涵盖经典控制、LLM 后训练、RLVR 与多模态智能体'
+      }
+    ],
+    ['meta', { property: 'og:type', content: 'website' }],
+    ['meta', { property: 'og:url', content: siteUrl }],
+    ['meta', { name: 'twitter:card', content: 'summary_large_image' }]
+  ],
+  locales: {
+    zh: {
+      label: '简体中文',
+      lang: 'zh-CN',
+      link: '/zh/',
+      title: 'Hands-on Modern RL',
+      description: '现代强化学习实战——从代码到原理',
+      themeConfig: {
+        nav: zhNav,
+        sidebar: zhSidebar,
+        editLink: {
+          pattern: editLinkPattern,
+          text: '在 GitHub 上编辑此页'
+        },
+        footer: {
+          message: '现代强化学习实战课程',
+          copyright: 'Copyright © WalkingLabs'
+        },
+        outline: {
+          level: [2, 3],
+          label: 'Outline'
+        },
+        lastUpdated: {
+          text: '最后更新'
+        },
+        docFooter: {
+          prev: '上一页',
+          next: '下一页'
+        },
+        darkModeSwitchLabel: '外观',
+        lightModeSwitchTitle: '切换到浅色模式',
+        darkModeSwitchTitle: '切换到深色模式',
+        sidebarMenuLabel: '菜单',
+        returnToTopLabel: '返回顶部',
+        langMenuLabel: '切换语言',
+        skipToContentLabel: '跳转到正文',
+        notFound: {
+          title: '页面未找到',
+          quote: '这个地址不存在，试试从中文首页重新进入。',
+          link: '/zh/',
+          linkText: '返回中文首页',
+          linkLabel: '返回中文首页'
+        }
+      }
+    },
+    en: {
+      label: 'English',
+      lang: 'en-US',
+      link: '/en/',
+      title: 'Hands-on Modern RL',
+      description:
+        'Modern Reinforcement Learning in Practice — From Code to Theory',
+      themeConfig: {
+        nav: enNav,
+        sidebar: enSidebar,
+        editLink: {
+          pattern: editLinkPattern,
+          text: 'Edit this page on GitHub'
+        },
+        footer: {
+          message: '现代强化学习实战课程',
+          copyright: 'Copyright © WalkingLabs'
+        },
+        outline: {
+          level: [2, 3],
+          label: 'Outline'
+        },
+        lastUpdated: {
+          text: 'Last updated'
+        },
+        docFooter: {
+          prev: 'Previous page',
+          next: 'Next page'
+        },
+        darkModeSwitchLabel: 'Appearance',
+        lightModeSwitchTitle: 'Switch to light theme',
+        darkModeSwitchTitle: 'Switch to dark theme',
+        sidebarMenuLabel: 'Menu',
+        returnToTopLabel: 'Return to top',
+        langMenuLabel: 'Change language',
+        skipToContentLabel: 'Skip to content',
+        notFound: {
+          title: 'Page not found',
+          quote:
+            'This page is missing. Try jumping back in from the English home page.',
+          link: '/en/',
+          linkText: 'Take me to English home',
+          linkLabel: 'Go to English home'
+        }
+      }
+    }
+  },
+  themeConfig: {
+    logo: '/readme/logo.png',
+    siteTitle: 'Hands-on Modern RL',
+    nav: zhNav,
+    sidebar: zhSidebar,
+    socialLinks: [
+      { icon: 'github', link: `https://github.com/${owner}/${repo}` }
+    ],
+    search: enableLocalSearch
+      ? {
+          provider: 'local',
+          options: {
+            _render: renderSearchMarkdown
+          }
+        }
+      : undefined,
+    editLink: {
+      pattern: editLinkPattern,
+      text: 'Edit this page on GitHub'
+    },
+    footer: {
+      message: 'Built for reusable bilingual course delivery',
+      copyright: 'Copyright © WalkingLabs'
+    },
+    outline: {
+      level: [2, 3],
+      label: 'Outline'
+    }
+  }
 })
