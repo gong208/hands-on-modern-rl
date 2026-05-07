@@ -496,7 +496,7 @@ $$Q(s, a) \leftarrow Q(s, a) + \alpha \left[ r + \gamma Q(s', a') - Q(s, a) \rig
 
 ### 动手：Cliff Walking 对比实验
 
-想象一个场景：你面前有一条贴着悬崖的最短路线，走 12 步就到终点，但稍微走偏一步就掉下去（扣 100 分）。Q-Learning 会怎么走？SARSA 又会怎么走？用 Gymnasium 的 CliffWalking-v0 [^4] 来亲眼看看两种算法学到的路径有什么不同。
+想象一个场景：你面前有一条贴着悬崖的最短路线，走 11 步就到终点，但稍微走偏一步就掉下去（扣 100 分）。Q-Learning 会怎么走？SARSA 又会怎么走？用 Gymnasium 的 CliffWalking-v0 [^4] 来亲眼看看两种算法学到的路径有什么不同。
 
 ```python
 import gymnasium as gym
@@ -598,7 +598,7 @@ print(f"\n后 100 轮平均回报: Q-Learning={np.mean(r_ql[-100:]):.1f}, SARSA=
 
 预期输出：
 
-**Q-Learning 学到的路径（贴着悬崖，12 步）**
+**Q-Learning 学到的路径（贴着悬崖，11 步）**
 
 <div style="display:grid;grid-template-columns:repeat(12,44px);gap:2px;justify-content:center;margin:16px 0;">
   <div style="height:40px;border-radius:6px;background:#f1f5f9;"></div>
@@ -652,7 +652,7 @@ print(f"\n后 100 轮平均回报: Q-Learning={np.mean(r_ql[-100:]):.1f}, SARSA=
   <div style="height:40px;border-radius:6px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;font-weight:700;font-size:14px;">★</div>
 </div>
 
-**SARSA 学到的路径（绕开悬崖，14 步）**
+**SARSA 学到的路径（绕开悬崖，13 步）**
 
 <div style="display:grid;grid-template-columns:repeat(12,44px);gap:2px;justify-content:center;margin:16px 0;">
   <div style="height:40px;border-radius:6px;background:#f1f5f9;"></div>
@@ -699,7 +699,7 @@ print(f"\n后 100 轮平均回报: Q-Learning={np.mean(r_ql[-100:]):.1f}, SARSA=
 
 **两个关键观察**：
 
-1. **路径不同**：Q-Learning 走最短路径（12 步，贴崖边），SARSA 绕远路（14 步，走第 2 行安全路线）。Q-Learning 的 TD Target 用了 $\max$，所以它假设"到了崖边还能稳稳地继续走"——这是最优策略的行为。但 ε-greedy 有 10% 概率随机走进悬崖，训练期间 Q-Learning 实际上经常掉下去。SARSA 知道自己有随机探索的风险，所以学到了一条更安全的路。
+1. **路径不同**：Q-Learning 走最短路径（11 步，贴崖边），SARSA 绕远路（13 步，走第 2 行安全路线）。Q-Learning 的 TD Target 用了 $\max$，所以它假设"到了崖边还能稳稳地继续走"——这是最优策略的行为。但 ε-greedy 有 10% 概率随机走进悬崖，训练期间 Q-Learning 实际上经常掉下去。SARSA 知道自己有随机探索的风险，所以学到了一条更安全的路。
 
 2. **回报不同**：在 ε=0.1 的条件下，Q-Learning 的收敛回报更好（-22 vs -26），因为它的路径更短。但如果 ε 更大（比如 0.3），Q-Learning 的训练过程中会频繁掉崖，训练期间的回报反而比 SARSA 更差——这也是为什么在一些安全关键场景中，on-policy 方法可能更合适。
 
