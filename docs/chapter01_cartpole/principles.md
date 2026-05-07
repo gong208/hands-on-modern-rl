@@ -242,7 +242,7 @@ def collect_rollout(model, env, num_steps=2048):
 
 收集完数据后，PPO 需要回答一个问题：**每一步动作到底比"平均水平"好了多少？** 这就是"优势（Advantage）"的概念。
 
-事实上，"优势"这个概念可以追溯到时序差分学习（Temporal Difference Learning）中的 TD 误差（Sutton, 1988）。TD 误差衡量的是"实际得到的奖励比预期好多少"。然而，单步 TD 误差虽然无偏，但方差较大；多步回报虽然方差小，但偏差较大。 Schulman 等人在 2016 年提出了 GAE（Generalized Advantage Estimation），通过一个参数 λ 在偏差和方差之间做平滑的折中：
+事实上，"优势"这个概念可以追溯到时序差分学习（Temporal Difference Learning）中的 TD 误差（Sutton, 1988）。TD 误差衡量的是"实际得到的奖励比预期好多少"。单步 TD 误差更依赖价值函数估计，通常低方差但高偏差；而蒙特卡洛或长多步回报更依赖实际采样回报，通常低偏差但高方差。 Schulman 等人在 2016 年提出了 GAE（Generalized Advantage Estimation），通过一个参数 λ 在偏差和方差之间做平滑的折中：
 
 ```python
 def compute_gae(model, transitions, last_bootstrap, gamma=0.99, lam=0.95):
