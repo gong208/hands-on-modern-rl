@@ -1,4 +1,4 @@
-# 4.5 Mountain Car 与稀疏奖励
+# 4.4 Mountain Car 与稀疏奖励
 
 ## 本节导读
 
