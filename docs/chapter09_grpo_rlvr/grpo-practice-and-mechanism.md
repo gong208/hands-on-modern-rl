@@ -336,7 +336,7 @@ trainer = GRPOTrainer(
     args=config,
     train_dataset=gsm8k["train"],
     reward_funcs=[rule_based_reward],  # 直接传入规则奖励函数
-    tokenizer=tokenizer,
+    processing_class=tokenizer,
 )
 
 trainer.train()  # 开始训练——不需要 Critic，不需要 RM

@@ -146,7 +146,12 @@ async function measureMermaidSvgBounds(page, svg) {
 
       const viewBox = svgElement.viewBox.baseVal
       const svgRect = svgElement.getBoundingClientRect()
-      if (!svgRect.width || !svgRect.height || !viewBox.width || !viewBox.height) {
+      if (
+        !svgRect.width ||
+        !svgRect.height ||
+        !viewBox.width ||
+        !viewBox.height
+      ) {
         return null
       }
 

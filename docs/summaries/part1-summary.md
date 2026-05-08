@@ -71,7 +71,7 @@ env = gym.make("CartPole-v1")
 model = PPO("MlpPolicy", env, verbose=1)
 
 # 训练——就这一行
-model.learn(total_timesteps=20000)
+model.learn(total_timesteps=80000)
 
 # 评估效果
 mean_reward, std_reward = evaluate_policy(model, env, n_eval_episodes=10)

@@ -22,7 +22,7 @@
 ::: tip 前置知识回顾
 本章会用到以下概念，如果记不清了，点进去复习一下再继续：
 
-- [GRPO 算法](../chapter09_grpo_rlvr/intro)——不用 Critic 的组内相对优化
+- [GRPO 算法](../chapter09_grpo_rlvr/grpo-practice-and-mechanism)——不用 Critic 的组内相对优化
 - [奖励函数设计](../chapter08_rlhf/reward-function-design)——规则奖励、模型奖励与 reward hacking
 - [PPO-RLHF 训练循环](../chapter08_rlhf/ppo-rlhf-loop)——KL 惩罚、梯度裁剪与参考模型
   :::

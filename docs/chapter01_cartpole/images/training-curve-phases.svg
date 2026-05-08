@@ -52,7 +52,7 @@
     <text x="0" y="238" text-anchor="middle" font-size="10" fill="#94a3b8">0</text>
     <text x="120" y="238" text-anchor="middle" font-size="10" fill="#94a3b8">3000</text>
     <text x="300" y="238" text-anchor="middle" font-size="10" fill="#94a3b8">10000</text>
-    <text x="500" y="238" text-anchor="middle" font-size="10" fill="#94a3b8">20000</text>
+    <text x="500" y="238" text-anchor="middle" font-size="10" fill="#94a3b8">80000</text>
 
     <!-- X-axis title -->
     <text x="250" y="256" text-anchor="middle" font-size="11" fill="#64748b">训练步数 (timesteps)</text>

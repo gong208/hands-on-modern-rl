@@ -27,7 +27,7 @@
   <g transform="translate(380, 62)">
     <rect width="118" height="66" rx="4" fill="#ffffff" stroke="#334155" stroke-width="1.4"/>
     <text x="59" y="27" text-anchor="middle" font-size="13" font-weight="600" fill="#0f172a">开始训练</text>
-    <text x="59" y="45" text-anchor="middle" font-size="10" fill="#475569">model.learn(20000)</text>
+    <text x="59" y="45" text-anchor="middle" font-size="10" fill="#475569">model.learn(80000)</text>
   </g>
 
   <path d="M 498 128 L 498 162 Q 498 170 490 170 L 374 170" fill="none" stroke="#475569" stroke-width="1.8" marker-end="url(#arrow)"/>

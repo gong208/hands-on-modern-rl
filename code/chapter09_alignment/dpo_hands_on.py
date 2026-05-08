@@ -18,7 +18,7 @@ import os
 import json
 import torch
 from datasets import Dataset
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer
 from trl import DPOTrainer, DPOConfig
 
 # ==========================================
@@ -151,6 +151,7 @@ def train_dpo_with_beta(preference_data, beta, model_name, save_dir, num_epochs=
         save_strategy="no",
         bf16=torch.cuda.is_bf16_supported() if torch.cuda.is_available() else False,
         remove_unused_columns=False,
+        beta=beta,
     )
 
     # 创建 DPOTrainer
@@ -159,7 +160,6 @@ def train_dpo_with_beta(preference_data, beta, model_name, save_dir, num_epochs=
         args=training_args,
         train_dataset=train_dataset,
         processing_class=tokenizer,
-        beta=beta,
     )
 
     # 执行训练

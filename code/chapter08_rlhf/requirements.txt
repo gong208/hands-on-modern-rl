@@ -1,6 +1,6 @@
 # 第10章：RLHF 完整流水线实验依赖
 transformers>=4.40.0
-trl>=0.11.0
+trl>=0.16.0
 torch>=2.0.0
 datasets>=2.14.0
 accelerate>=0.20.0

@@ -48,8 +48,8 @@ print(f"偏好数据集大小: {len(dataset)} 条")
 ## 运行 DPO 训练
 
 ```python
-from trl import DPOTrainer
-from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments
+from trl import DPOTrainer, DPOConfig
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 # ==========================================
 # 2. 加载模型和分词器
@@ -62,7 +62,7 @@ tokenizer.pad_token = tokenizer.eos_token
 # ==========================================
 # 3. 配置 DPO 训练
 # ==========================================
-training_args = TrainingArguments(
+training_args = DPOConfig(
     output_dir="./dpo_toxic_alignment",
     per_device_train_batch_size=2,
     learning_rate=5e-5,
@@ -70,15 +70,14 @@ training_args = TrainingArguments(
     logging_steps=2,           # 频繁记录日志
     save_steps=20,
     remove_unused_columns=False,
+    beta=0.1,                  # KL 惩罚系数，控制偏离参考模型的程度
 )
 
-# DPO 的关键参数
 trainer = DPOTrainer(
     model=model,
     args=training_args,
     train_dataset=dataset,
-    tokenizer=tokenizer,
-    beta=0.1,  # KL 惩罚系数，控制偏离参考模型的程度
+    processing_class=tokenizer,
 )
 
 # ==========================================

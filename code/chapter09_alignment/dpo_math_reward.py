@@ -283,6 +283,7 @@ training_args = DPOConfig(
     save_strategy="no",
     bf16=torch.cuda.is_bf16_supported() if torch.cuda.is_available() else False,
     remove_unused_columns=False,
+    beta=0.1,
 )
 
 # 创建 DPOTrainer
@@ -291,7 +292,6 @@ trainer = DPOTrainer(
     args=training_args,
     train_dataset=train_dataset,
     processing_class=train_tokenizer,
-    beta=0.1,
 )
 
 print("\n训练中... 请观察 loss 和 reward 的变化趋势\n")

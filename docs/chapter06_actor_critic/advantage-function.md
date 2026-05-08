@@ -5,7 +5,7 @@
 ::: tip 本节会用到的前置知识
 
 - [REINFORCE 策略梯度](../chapter05_policy_gradient/policy-gradient) $\nabla_\theta J \approx \nabla_\theta \log \pi(a|s) \cdot G_t$——基线要加在哪里
-- [状态价值 $V(s)$](../chapter03_mdp/bellman-equation)——最好的基线是什么
+- [状态价值 $V(s)$](../chapter03_mdp/value-bellman)——最好的基线是什么
 - [动作价值 $Q(s,a)$](../chapter03_mdp/value-q)——优势函数的定义依赖 $Q$ 和 $V$ 的差
 - [TD Error](../chapter03_mdp/dp-mc-td) $\delta = r + \gamma V(s') - V(s)$——优势函数的实用估计方法
   :::
@@ -26,7 +26,7 @@ $$\nabla_\theta J \approx \nabla_\theta \log \pi(a|s) \cdot (G_t - V(s))$$
 
 $$A^\pi(s,a) = Q^\pi(s,a) - V^\pi(s) \tag{6.1}$$
 
-其中 $Q^\pi(s,a)$ 是[动作价值函数](../chapter03_mdp/value-q)（"在状态 $s$ 先做动作 $a$，之后按策略行动的期望回报"），$V^\pi(s)$ 是[状态价值函数](../chapter03_mdp/bellman-equation)（"在状态 $s$ 按策略行动的期望回报"）。两者的差恰好是"因为做了动作 $a$，多拿了多少分"。
+其中 $Q^\pi(s,a)$ 是[动作价值函数](../chapter03_mdp/value-q)（"在状态 $s$ 先做动作 $a$，之后按策略行动的期望回报"），$V^\pi(s)$ 是[状态价值函数](../chapter03_mdp/value-bellman)（"在状态 $s$ 按策略行动的期望回报"）。两者的差恰好是"因为做了动作 $a$，多拿了多少分"。
 
 优势函数的含义是：**做了这个动作，比"平均能拿多少分"好了多少。**
 

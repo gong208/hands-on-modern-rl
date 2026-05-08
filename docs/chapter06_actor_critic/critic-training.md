@@ -5,13 +5,13 @@
 ::: tip 本节会用到的前置知识
 
 - [DP/MC/TD 三种价值估计方法](../chapter03_mdp/dp-mc-td)——三种方法的原理和对比
-- [贝尔曼期望方程](../chapter03_mdp/bellman-equation)——DP 更新的理论基础
+- [贝尔曼期望方程](../chapter03_mdp/value-bellman)——DP 更新的理论基础
 - [TD Error $\delta$](../chapter03_mdp/dp-mc-td)——TD 方法的核心信号
   :::
 
 ## DP：理论基准
 
-如果完全知道环境的转移概率 $P$ 和奖励函数 $R$（回顾：[MDP 五元组](../chapter03_mdp/mdp)），可以直接用[贝尔曼期望方程](../chapter03_mdp/bellman-equation)迭代 Critic：
+如果完全知道环境的转移概率 $P$ 和奖励函数 $R$（回顾：[MDP 五元组](../chapter03_mdp/mdp)），可以直接用[贝尔曼期望方程](../chapter03_mdp/value-bellman)迭代 Critic：
 
 $$V_\phi(s) \leftarrow \sum_a \pi(a|s) \left[ R(s,a) + \gamma \sum_{s'} P(s'|s,a) V_\phi(s') \right]$$
 

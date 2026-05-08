@@ -600,29 +600,32 @@ const zhSidebar = {
               text: '3.1 两台老虎机：RL 的最小问题',
               link: '/chapter03_mdp/bandit'
             },
-            { text: '3.2 MDP：RL 的形式化框架', link: '/chapter03_mdp/mdp' },
+            { text: '3.2 MDP：描述序列决策问题', link: '/chapter03_mdp/mdp' },
             {
-              text: '3.3 V(s) 与贝尔曼方程',
+              text: '3.3 V(s)：价值函数与贝尔曼方程',
               link: '/chapter03_mdp/value-bellman'
             },
             {
-              text: '3.4 DP、MC、TD',
+              text: '3.4 DP、MC、TD：三种价值估计方法',
               link: '/chapter03_mdp/dp-mc-td'
             },
-            { text: '3.5 Q(s, a)', link: '/chapter03_mdp/value-q' },
+            { text: '3.5 Q(s,a)：给动作打分', link: '/chapter03_mdp/value-q' },
             {
-              text: '3.6 策略目标 J(theta)',
+              text: '3.6 J(θ)：直接优化策略',
               link: '/chapter03_mdp/policy-objective'
             },
             {
-              text: '3.7 算法数据来源',
+              text: '3.7 数据来源：On-policy 与 Off-policy',
               link: '/chapter03_mdp/algorithm-taxonomy'
             },
             {
-              text: '3.8 Reward Shaping',
+              text: '3.8 奖励函数：优化目标从哪里来',
               link: '/chapter03_mdp/reward-design'
             },
-            { text: '3.9 本章总结', link: '/chapter03_mdp/panorama' }
+            {
+              text: '3.9 本章总结：MDP、价值与策略',
+              link: '/chapter03_mdp/panorama'
+            }
           ]
         },
         {

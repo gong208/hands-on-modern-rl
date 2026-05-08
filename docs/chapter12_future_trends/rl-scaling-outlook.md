@@ -352,4 +352,4 @@ RL 训练的未来有两个清晰的方向：**RL Scaling**（训练时投入更
 
 </details>
 
-到这里，RL Scaling 的三个方向已经讲完。但还有一个重要的后训练路线没有讨论——**知识蒸馏**：用 Teacher 模型的 log-prob 当训练信号，在 1/10 的算力下达到和 RL 相当的效果。让我们进入下一节——[知识蒸馏与在线策略蒸馏](./on-policy-distillation)。
+到这里，RL Scaling 的三个方向已经讲完。但还有一个重要的后训练路线没有讨论——**知识蒸馏**：用 Teacher 模型的 log-prob 当训练信号，在 1/10 的算力下达到和 RL 相当的效果。让我们进入下一节——[知识蒸馏与在线策略蒸馏](../chapter09_grpo_rlvr/on-policy-distillation)。

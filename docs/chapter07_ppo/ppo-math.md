@@ -343,7 +343,7 @@ optimizer.step()
 
 朴素 REINFORCE 能工作，但**方差很大**（回顾：[REINFORCE 的致命缺陷](../chapter05_policy_gradient/policy-gradient)）。原因是 $G_t$ 只是告诉我们”这次后面总共拿了多少奖励”，却没有告诉我们”这在当前状态下算不算好”。
 
-例如 LunarLander 某一步之后拿到 $G_t=80$。这听起来不错，但如果同一个状态下正常策略平均能拿 $120$，那这个动作其实低于平均水平。我们需要一个参照物，这个参照物就是[状态价值函数](../chapter03_mdp/bellman-equation)：
+例如 LunarLander 某一步之后拿到 $G_t=80$。这听起来不错，但如果同一个状态下正常策略平均能拿 $120$，那这个动作其实低于平均水平。我们需要一个参照物，这个参照物就是[状态价值函数](../chapter03_mdp/value-bellman)：
 
 $$
 V^\pi(s_t)

@@ -315,7 +315,7 @@ def ppo_update(model, optimizer, transitions, advantages, returns, clip_eps=0.2)
 flowchart LR
     START["随机策略\nπ(左)≈0.5 π(右)≈0.5"]
 
-    subgraph LOOP["训练循环 (重复 20 次)"]
+    subgraph LOOP["训练循环 (重复 40 次)"]
         direction TB
         A["① 收集 Rollout\n用策略跑 2048 步\n记录 (状态, 动作, 奖励, 价值)"]
         B["② 计算 GAE 优势\n这步比预期好多少？\n+ PPO 裁剪保护"]

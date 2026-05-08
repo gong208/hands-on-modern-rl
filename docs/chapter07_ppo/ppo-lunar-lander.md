@@ -1,6 +1,6 @@
 # 7.1 动手：用 PPO 训练 LunarLander
 
-上一章的 [Actor-Critic](../chapter06_actor_critic/actor-critic) 让 CartPole 学会了平衡，但 CartPole 只有两个动作、四个状态维度，实在太简单了。这一节我们把难度拉高——让 AI 学会在月球上着陆飞船。LunarLander-v2 有四个引擎喷口、八维连续状态（位置、速度、角度、角速度），需要精准控制推力和方向才能平稳着陆。我们将用 PPO 来完成这个任务，亲眼观察训练过程中那些关键指标的起伏变化。
+上一章的 [Actor-Critic](../chapter06_actor_critic/actor-critic) 让 CartPole 学会了平衡，但 CartPole 只有两个动作、四个状态维度，实在太简单了。这一节我们把难度拉高——让 AI 学会在月球上着陆飞船。LunarLander-v3 有四个引擎喷口、八维连续状态（位置、速度、角度、角速度），需要精准控制推力和方向才能平稳着陆。我们将用 PPO 来完成这个任务，亲眼观察训练过程中那些关键指标的起伏变化。
 
 ## 运行 PPO 训练
 
@@ -15,7 +15,7 @@ import numpy as np
 # ==========================================
 # 1. 创建环境和 PPO 模型
 # ==========================================
-env = gym.make("LunarLander-v2")
+env = gym.make("LunarLander-v3")
 
 # PPO 的关键超参数
 model = PPO(
@@ -26,7 +26,7 @@ model = PPO(
     batch_size=64,            # 小批量大小
     n_epochs=10,              # 每次更新的训练轮数
     gamma=0.99,               # 折扣因子
-    gae_lambda=0.98,          # GAE 的 λ 参数
+    gae_lambda=0.95,          # GAE 的 λ 参数
     clip_range=0.2,           # PPO 裁剪范围 ε
     ent_coef=0.01,            # 熵正则化系数（鼓励探索）
     vf_coef=0.5,              # 价值函数损失权重
@@ -74,13 +74,13 @@ callback = MetricsCallback()
 # 3. 开始训练！
 # ==========================================
 print("开始训练 LunarLander，目标：平均 Reward > 200")
-model.learn(total_timesteps=500_000, callback=callback)
+model.learn(total_timesteps=200_000, callback=callback)
 model.save("ppo_lunarlander")
 
 print(f"最终平均 Reward: {np.mean(callback.rewards[-50:]):.1f}")
 ```
 
-运行这段代码，你会看到训练日志像流水一样涌出来。别急着看最终结果——先观察训练过程本身，这才是这节课的重点。
+完整配套脚本 [ppo_lunar_lander.py](../../code/chapter07_ppo/ppo_lunar_lander.py) 会用 `DummyVecEnv` 创建 4 个并行环境来加快采样，因此训练日志里的环境交互步数会按向量化环境累计。运行时你会看到训练日志像流水一样涌出来。别急着看最终结果——先观察训练过程本身，这才是这节课的重点。
 
 ## PPO 训练循环的全貌
 
@@ -93,7 +93,7 @@ flowchart TD
     end
 
     subgraph advantage ["第二步：计算优势"]
-        B --> C["用 GAE 计算每个时刻的优势 Â_t\nλ=0.98 控制偏差-方差权衡"]
+        B --> C["用 GAE 计算每个时刻的优势 Â_t\nλ=0.95 控制偏差-方差权衡"]
         C --> D["计算回报 R_t = Â_t + V(s_t)\n作为 Critic 的训练目标"]
     end
 
@@ -184,7 +184,7 @@ print("训练指标图已保存")
 
 **ε（clip_range）的影响**：默认值 0.2 意味着策略比率被限制在 [0.8, 1.2] 之间。如果你把 ε 调大到 0.3，允许更大的更新幅度，训练可能更快但也更不稳定——clip fraction 会更高，reward 跳水更频繁。如果调小到 0.1，训练更平稳但可能更慢，因为模型被"绑手绑脚"了。
 
-**λ（gae_lambda）的影响**：默认值 0.98 偏向蒙特卡洛估计（低偏差、高方差）。如果你把它降到 0.9，会更偏向 TD 估计（高偏差、低方差），训练曲线会更平滑但可能收敛到稍差的结果。这个参数在第 6.3 节的 GAE 部分会详细解释。
+**λ（gae_lambda）的影响**：默认值 0.95 偏向蒙特卡洛估计（低偏差、高方差）。如果你把它降到 0.9，会更偏向 TD 估计（高偏差、低方差），训练曲线会更平滑但可能收敛到稍差的结果。这个参数在 GAE 部分会详细解释。
 
 <details>
 <summary>思考题：如果 clip fraction 一直为 0，说明什么？这是好事还是坏事？</summary>
