@@ -654,7 +654,7 @@ const zhSidebar = {
               link: '/chapter04_dqn/dqn-family'
             },
             {
-              text: '4.6 视觉游戏项目',
+              text: '4.6 动手：视觉游戏项目',
               link: '/chapter04_dqn/visual-game-projects'
             }
           ]

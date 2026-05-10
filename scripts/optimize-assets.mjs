@@ -74,6 +74,54 @@ function hashFile(filePath) {
   return sha256(fs.readFileSync(filePath))
 }
 
+function readGifLoopCount(filePath) {
+  const buffer = fs.readFileSync(filePath)
+  const marker = Buffer.from('NETSCAPE2.0', 'ascii')
+  const markerIndex = buffer.indexOf(marker)
+
+  if (markerIndex < 0) return null
+
+  const loopIndex = markerIndex + marker.length
+  if (
+    buffer[loopIndex] !== 0x03 ||
+    buffer[loopIndex + 1] !== 0x01 ||
+    loopIndex + 4 >= buffer.length
+  ) {
+    return null
+  }
+
+  return buffer[loopIndex + 2] + buffer[loopIndex + 3] * 256
+}
+
+function readWebpLoopCount(filePath) {
+  if (!fs.existsSync(filePath)) return null
+
+  const buffer = fs.readFileSync(filePath)
+  const marker = Buffer.from('ANIM', 'ascii')
+  const markerIndex = buffer.indexOf(marker)
+
+  if (markerIndex < 0 || markerIndex + 13 >= buffer.length) return null
+
+  return buffer[markerIndex + 12] + buffer[markerIndex + 13] * 256
+}
+
+function setWebpLoopCount(filePath, loopCount) {
+  if (!commandExists('webpmux')) return
+
+  const loopedPath = `${filePath}.loop.webp`
+
+  try {
+    execFileSync(
+      'webpmux',
+      ['-set', 'loop', String(loopCount), filePath, '-o', loopedPath],
+      { stdio: 'ignore' }
+    )
+    fs.copyFileSync(loopedPath, filePath)
+  } finally {
+    fs.rmSync(loopedPath, { force: true })
+  }
+}
+
 function formatSvgNumber(value) {
   return Number.isInteger(value) ? String(value) : value.toFixed(3)
 }
@@ -375,9 +423,20 @@ function optimizeRaster(sourcePath, sourceRelative) {
 function optimizeGif(sourcePath, sourceRelative) {
   const outputRelative = outputRelativeForImage(sourceRelative)
   const outputPath = path.join(outputDir, outputRelative)
+  const sourceLoopCount = readGifLoopCount(sourcePath)
   const cached = useCachedOutput(sourcePath, outputPath, outputRelative)
 
-  if (cached) return cached
+  if (cached) {
+    const cachedOutputPath = cached.optimizedPath
+      ? path.join(docsDir, cached.optimizedPath)
+      : outputPath
+    const cachedLoopCount = readWebpLoopCount(cachedOutputPath)
+
+    if (sourceLoopCount === null || cachedLoopCount === sourceLoopCount) {
+      if (sourceLoopCount !== null) cached.loopCount = sourceLoopCount
+      return cached
+    }
+  }
 
   if (!commandExists('gif2webp')) {
     return useExistingOutput(
@@ -407,6 +466,9 @@ function optimizeGif(sourcePath, sourceRelative) {
 
   try {
     execFileSync('gif2webp', args, { stdio: 'ignore' })
+    if (sourceLoopCount !== null) {
+      setWebpLoopCount(tempPath, sourceLoopCount)
+    }
   } catch (error) {
     return useExistingOutput(
       sourcePath,
@@ -416,7 +478,9 @@ function optimizeGif(sourcePath, sourceRelative) {
     )
   }
 
-  return keepIfSmaller(sourcePath, tempPath, outputPath, outputRelative)
+  const result = keepIfSmaller(sourcePath, tempPath, outputPath, outputRelative)
+  if (sourceLoopCount !== null) result.loopCount = sourceLoopCount
+  return result
 }
 
 function optimizeSvg(sourcePath, sourceRelative) {

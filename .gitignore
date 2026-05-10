@@ -20,6 +20,7 @@ docs/public/optimized/
 !docs/chapter13_future_trends/embodied-intelligence/model-based-rl/images/paper/*.png
 !docs/chapter13_future_trends/offline-rl/images/paper/*.png
 !docs/**/*.png
+output/
 code/**/output/
 code/**/*.zip
 code/**/dpo_results/
@@ -36,3 +37,18 @@ debug/
 # Temporary scripts and files
 temp/
 docs/__pdf__/
+
+# Generated sitemap
+docs/public/sitemap.xml
+
+# Logs and intermediate files
+*.log
+*.aux
+*.out
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.bbl
+*.blg
+scripts/*.pdf
+swanlog/
