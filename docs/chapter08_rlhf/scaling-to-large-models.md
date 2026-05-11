@@ -38,7 +38,7 @@ flowchart LR
     style Large fill:#e8f5e9,stroke:#2e7d32
 ```
 
-## 小参数版本：TRL 看清楚结构
+## 小参数版本（TRL）
 
 小参数实验最重要的价值是可理解。你能直接看到：
 
@@ -71,7 +71,7 @@ base checkpoint
 
 如果这些问题在 0.5B 上还没搞清楚，直接上 7B 只会让调试成本乘上十倍。
 
-## 中等参数版本：OpenRLHF 看工程扩展
+## 中等参数版本（OpenRLHF）
 
 当模型到 7B 以上，瓶颈开始从“代码能不能写出来”变成“rollout 和训练吞吐能不能跟上”。PPO-RLHF 需要模型不断生成回答，再让 RM 打分，再回到训练，这个 generate-train loop 会让普通训练框架很吃力。
 
@@ -108,7 +108,7 @@ flowchart LR
 
 注意 rollout 和训练的资源形态不同。Rollout 更像推理服务，关心吞吐、KV cache、连续 batching；PPO update 是训练负载，关心显存、梯度同步、optimizer state。把两者都塞进一个简单 loop，在小模型可行，在大模型就会浪费资源。
 
-### 为什么 rollout 会成为瓶颈
+### Rollout 瓶颈
 
 普通监督训练的样本已经在硬盘上；PPO-RLHF 的训练样本要现场生成。每条样本都要经历：
 
@@ -132,7 +132,7 @@ Actor 生成回答
 | Rollout buffer         | 解耦生成和训练                   |
 | 异步评估               | 不阻塞主训练                     |
 
-## 大参数版本：NeMo RL / NeMo Aligner 看生产训练
+## 大参数版本（NeMo）
 
 70B 级别以后，训练框架不仅要跑得动，还要可恢复、可观测、可复现。NVIDIA NeMo RL / NeMo Aligner 这类框架更接近生产训练视角：多机多卡、Megatron/FSDP、分布式 checkpoint、混合精度、模型并行、数据并行和完整监控都必须一起考虑。
 
@@ -145,7 +145,7 @@ Actor 生成回答
 - **checkpoint 与恢复**：长时间训练中断后，Actor、Critic、optimizer、scheduler、rollout 状态要一致恢复。
 - **评估闭环**：每个 checkpoint 都要跑固定 benchmark、偏好评估和安全抽检。
 
-### 四模型成本怎么估
+### 四模型成本估算
 
 经典 PPO-RLHF 至少涉及四个模型角色：
 
@@ -189,7 +189,7 @@ Actor 生成回答
 | 本地日志          | SwanLab/W&B/内部监控平台               |
 | 手动 checkpoint   | 分布式 checkpoint + 自动恢复           |
 
-## 什么时候该换框架
+## 框架选型
 
 | 规模    | 推荐路线                                           |
 | ------- | -------------------------------------------------- |

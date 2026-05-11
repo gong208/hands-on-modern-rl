@@ -40,7 +40,7 @@ flowchart TD
     style M2 fill:#e3f2fd,stroke:#1976d2,color:#000
 ```
 
-## 为什么这是真正的 Agentic RL？
+## Agentic RL 的判断标准
 
 单工具（MURPHY、你之前的实验）：模型只会调一个代码执行器。本质是 "multi-turn RLVR"。
 
