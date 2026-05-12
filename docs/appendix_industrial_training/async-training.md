@@ -47,6 +47,10 @@ search: false
 
 优点：代码简单，GPU 用得少。缺点：训练和生成不能同时跑。
 
+::: tip 同步模式也能快：Seer
+Seer（Moonshot AI / Kimi）走的是另一个方向——不转向异步，而是在同步框架内消灭"慢人问题"。它的核心观察是：同一 prompt 生成的多条回答，长度和模式高度相似。利用这个特性，Seer 引入三项优化：divided rollout（动态负载均衡）、context-aware scheduling（减少长尾等待）、adaptive grouped speculative decoding（加速慢请求）。结果是 rollout 吞吐提升 74–97%，尾延迟降低 75–93%，同时保持严格的 on-policy 保证——不改变 GRPO 算法。Seer 基于 Mooncake 分离式 KV cache + vLLM + Megatron，详见 [arXiv:2511.14617](https://arxiv.org/abs/2511.14617)。
+:::
+
 ### 共置模式（Colocated）
 
 还是一组 GPU，推理和训练轮替使用。生成时把参数重排成推理格式（从 FSDP 分片格式转成 vLLM 张量并行格式），训练时再转回来。格式转换比重新加载模型快很多，但本质还是轮替。

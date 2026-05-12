@@ -168,6 +168,75 @@ $$
 4. **“DPO 只是个监督学习，不是 RL？”**
    虽然 DPO 把损失函数写成了分类问题的形式，不需要显式拟合奖励模型，但它依然是在固定的偏好数据上移动策略分布。它的本质是在解决 Offline 设定下的策略优化问题，如果不注意数据覆盖率，同样会面临 Offline RL 典型的分布外偏离风险。
 
+## 训推不一致：On-policy 为什么还是会出问题？
+
+本节前面反复强调，On-policy 的前提是行为策略 $\mu$ 和目标策略 $\pi_\theta$ 一致。在教科书和伪代码里，这似乎天经地义——不就是同一个模型先采样再更新吗？但近年来的前沿论文揭示了一个被长期忽视的问题：**训推不一致（Training-Inference Mismatch）**。
+
+严格来说，训推不一致本身并不是大模型独有的问题——任何 RL 系统中，只要采样策略和待优化策略之间存在漂移，就都会产生类似的分布偏差。AlphaGo、Atari DQN 时代就已经有了策略滞后（Policy Lag）导致训练不稳定的经验。但这个问题**在大模型 RL 的工程实现中被急剧放大了**，因为在 LLM-RL 系统中，采样和训练使用的是完全不同的引擎和精度，导致了一个根本性的撕裂。
+
+> **"When Speed Kills Stability: Demystifying RL Collapse from the Training-Inference Mismatch"**
+> _(Richard Li et al., 2025)_
+
+这篇论文指出了一个尖锐的事实：在绝大多数 LLM-RL 实现中，$\pi_{\text{rollout}}$（负责采样数据的推理策略）和 $\pi_{\text{old}}$（训练框架里记录的"旧策略"）**根本就不是同一个策略**。
+
+- **推理侧**（生成 rollout 数据）：vLLM / SGLang，FP8/BF16 精度，KV Cache 优化
+- **训练侧**（计算 log prob 和梯度）：FSDP/Megatron，BF16/FP32 精度，激活重计算
+
+同一个模型参数在不同的精度、不同的计算图下，输出的 log-probability **天然就不一样**。你以为行为策略 $\mu$ 等于目标策略 $\pi_\theta$，实际上 $\mu \approx \pi_\theta$ 里的那个"约等于"可能已经偏离了几十个百分点。
+
+> **"Defeating the Training-Inference Mismatch via FP16"**
+> _(Qi et al., 2025)_
+
+这篇论文把根因追到了浮点精度。BF16 的尾数位太少，在 token 级别的 log-probability 计算中引入了系统性舍入误差。而仅仅把精度切回 FP16，这个偏差就几乎消失了——几行代码解决了 LLM-RL 最令人头疼的训练崩溃。
+
+> **"Taming the Tail: Stable LLM Reinforcement Learning via Dynamic Vocabulary Pruning"**
+> _(arXiv 2512.23087, 2025)_
+
+这篇论文进一步揭示训推不一致的**非对称性**：偏差与 $(1-p)$ 成正比——高频 token 误差微乎其微，但长尾低频 token 会产生系统性偏差，在梯度估计中持续累积，最终导致崩溃。
+
+> **"Stabilizing Reinforcement Learning with LLMs: Formulation and Practices"**
+> _(Zheng et al., Qwen Team, arXiv 2512.01374, 2025)_
+
+阿里 Qwen 团队提出了统一的理论框架：token-level 的 REINFORCE 目标本质上是对序列级奖励的**一阶近似**，而这个近似成立需要两个前提——**(1) 训推一致**，**(2) 策略不过时**。一旦训推不一致成立，一阶近似就失效了。
+
+### 训推不一致与 PPO 的关系
+
+读者可能会问：这跟我们前面提到的 PPO 有什么关系？答案是：**PPO 的 Clipping 机制就是对训推不一致的一种"防御术"，但它只能防住一半**。
+
+PPO 的核心公式是：
+
+$$
+\mathcal{L}^{\text{CLIP}} = \mathbb{E}\left[\min\left( r_t(\theta) \hat{A}_t,\ \text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \hat{A}_t \right)\right]
+$$
+
+其中 $r_t(\theta) = \frac{\pi_\theta(a_t|s_t)}{\pi_{\text{old}}(a_t|s_t)}$ 是重要性采样比率。PPO 用 Clipping 限制 $r_t$ 偏离 1 太远，本质上是在说："如果新策略跟采样时的旧策略差太多了，别信这个梯度，剪掉它。"
+
+但 PPO 的 Clipping 有一个默认的前提假设——**分母 $\pi_{\text{old}}$ 确实是"采样时真正执行的那个策略"**。
+
+在经典 RL（Atari、MuJoCo 等）中，采样的进程和训练的进程是同一个 Python 进程，$\pi_{\text{old}}$ 就是采样那一瞬间保存下来的网络权重，策无二致。所以 PPO 的 Clipping 纯防"优化导致的新旧策略漂移"，完全有效。
+
+但在 LLM-RL 中，情况变了：
+
+- $\pi_{\text{rollout}}$：vLLM 引擎在 FP8 下采样时**真实生效的策略**
+- $\pi_{\text{old}}$：训练框架事后用 BF16/FP32 重新算出来的"你以为采样时用的策略"
+
+这两个**本来就不是同一个策略**。也就是说，重要性采样比率 $r_t$ 的**分母本身就是有偏的**——PPO 的 Clipping 在试图纠正优化导致的漂移，但它没有机制去纠正推理引擎和训练引擎之间的不一致。
+
+打个比方：PPO 的 Clipping 保证了你**从旧策略出发不会走太远**，但它没保证"旧策略"那张地图本身是准的。训推不一致意味着**地图一开始就有偏差**，Clipping 发现不了这个问题。
+
+这就解释了为什么 LLM-RL 中即使用了 PPO Clipping，训练仍然可能不稳定。围绕训推不一致的修复方案，前沿工作大致沿着几条线展开：
+
+- **精度修复**：FP16/BF16 替代 FP8 做 Rollout，减少 $\pi_{\text{rollout}}$ 和 $\pi_{\text{old}}$ 之间的数值偏差（Qi et al., 2025）；也有工作反过来压低训练端精度——FP8-RL 在 veRL 框架中实现了 W8A8 全栈低精度训练，配合重要性采样纠正，Rollout 吞吐提升 44% 同时匹配 BF16 基线（Qiu et al., arXiv 2601.18150）。
+- **重要性采样（IS）纠正**：既然 $\pi_{\text{rollout}} \neq \pi_{\text{old}}$，那就显式引入重要性权重来纠正分布偏移。Truncated IS（TIS）是最直接的做法，剪掉极端的 IS 比率避免梯度爆炸（Yao et al., NeurIPS 2025）；更新的工作是 MinPRO（Lei et al., arXiv 2601.22718），用前缀内最小 token 级比率替代累积乘积，在 Off-policy 漂移较大时更稳定。
+- **剪枝长尾 token**：训推不一致集中在低概率区域，直接剔除极端长尾 token 可以从源头消除最大偏差源（"Taming the Tail", arXiv 2512.23087）。
+- **MoE 路由回放**：推理时的 Expert 路由与训练时天然不同，R3（Rollout Routing Replay）在训练时回放推理的路由分布，解决了 MoE-RL 独有的训推不一致放大效应（Zheng et al., arXiv 2512.01374）。
+- **优化视角**：将训推不一致视为动态优化问题，通过响应长度激增等信号触发学习率调度（Zhang et al., arXiv 2602.01826）。
+- **工程侧回滚纠正**：在训练前用当前训练引擎重新计算 Rollout 策略的 log-probability，暴力对齐 $\pi_{\text{rollout}}$ 和 $\pi_{\text{old}}$——成本高但最可靠。
+
+### 与现实和解
+
+这些论文共同指向一个结论：在 LLM-RL 的工程实践中，不存在"纯粹"的 On-policy。我们能做到的只是**把 $\mu$ 和 $\pi_\theta$ 的差距控制在可接受范围内**——PPO 的 Clipping 是一种控制，FP16 是一种控制，R3 路由回放也是一种控制。正文前半部分讲的 On/Off-policy 理论是干净的二值分类，而工程现实是一个**连续的光谱**——理论上的 On-policy，实践中总是带着一点 Off-policy 的味道。
+
 ## 小结
 
 本节我们没有推导新的公式，而是回答了“食材从哪来”的问题：
@@ -182,31 +251,66 @@ $$
 
 下一节：[奖励函数设计](./reward-design)
 
-## 附录：常见论文术语速查
+## 附录：从论文标题读懂术语
 
-RL 和 Agentic RL 论文的标题里经常堆满缩写和黑话。下表列出最常见的术语及其含义，遇到时可以快速对照。
+RL 和 Agentic RL 论文的标题里经常堆满缩写和黑话。与其死记硬背定义，不如直接看真实的论文标题——标题本身就是最地道的用法示范。下面我们以 2024–2026 年最新论文为例，逐一拆解标题中出现的核心术语。
 
-| 术语                    | 全称                                       | 含义                                                                                               |
-| ----------------------- | ------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| **On-policy**           | —                                          | 训练数据由当前正在优化的策略亲自产生。数据用过一轮后通常丢弃。                                     |
-| **Off-policy**          | —                                          | 训练数据可以来自旧策略或其他来源，与当前优化的目标策略不同。数据可反复复用。                       |
-| **Online RL**           | —                                          | 训练过程中智能体持续与环境交互，数据集不断增长。                                                   |
-| **Offline RL**          | —                                          | 训练前数据集已固定，训练中不允许再与环境交互。                                                     |
-| **Model-based**         | —                                          | 算法显式学习或使用环境模型（状态转移 $P(s' \mid s,a)$ 和奖励 $R(s,a)$），用模型做规划或生成模拟数据。 |
-| **Model-free**          | —                                          | 不学习环境模型，直接从交互数据中估计价值函数或策略。                                               |
-| **Actor-Critic**        | —                                          | 架构模式：Actor（策略网络）负责选动作，Critic（价值网络）负责评估动作好坏，两者协同训练。          |
-| **SAC**                 | Soft Actor-Critic                          | Off-policy 的 Actor-Critic 算法，通过最大熵正则化鼓励策略保持随机性，提升探索和鲁棒性。            |
-| **TD3**                 | Twin Delayed DDPG                          | 对 DDPG 的改进：双 Q 网络抑制高估、延迟更新策略网络、目标动作加噪声平滑。                          |
-| **PPO**                 | Proximal Policy Optimization               | On-policy 策略梯度算法，通过 Clipping 限制每步更新幅度，训练稳定，是 RLHF 的主流算法。             |
-| **GRPO**                | Group Relative Policy Optimization         | DeepSeek 提出的 On-policy 算法，用组内相对排名替代绝对奖励，不需要单独的 Critic 网络。             |
-| **DPO**                 | Direct Preference Optimization             | 在固定偏好数据上直接优化策略，跳过显式的奖励模型训练。本质上是 Offline + Off-policy。              |
-| **RLHF**                | Reinforcement Learning from Human Feedback | 用人类偏好数据训练奖励模型，再用 RL（通常 PPO）优化策略。                                          |
-| **SFT**                 | Supervised Fine-Tuning                     | 监督微调：在高质量指令-回答数据上直接训练模型，不属于 RL 但通常是 RLHF 流程的前置步骤。            |
-| **Reward Hacking**      | —                                          | 策略学会了钻奖励函数的漏洞，拿到高分但行为并非人类真正想要的。                                     |
-| **KL Constraint**       | Kullback-Leibler Constraint                | 在策略更新中限制新策略与旧策略的 KL 散度，防止更新步长过大。PPO 的 Clipping 是其近似实现。         |
-| **Bootstrapping**       | —                                          | 用自身的估计值构造更新目标（如 $r + \gamma V(s')$），而非等待完整轨迹。TD 方法的核心特征。         |
-| **Experience Replay**   | —                                          | 经验回放：将交互数据存入缓冲区，训练时随机抽样。使 Off-policy 成为可能，同时打破数据的时间相关性。 |
-| **Curriculum Learning** | —                                          | 课程学习：从简单任务逐步过渡到困难任务，帮助智能体更高效地学习。                                   |
+### On-policy 与 Off-policy：数据是谁采的？
+
+这两个词几乎是 RL 论文标题里出现频率最高的形容词。它们描述的是**训练数据和当前策略之间的关系**。
+
+**典型论文标题拆解：**
+
+> **"Group-Relative REINFORCE Is Secretly an Off-Policy Algorithm: Demystifying Some Myths About GRPO and Its Friends"**
+> _(arXiv 2509.24203, 2025)_
+
+这篇论文的标题直接挑战了一个流行认知——DeepSeek 提出的 GRPO 一直被当作 On-policy 算法来用，但作者证明它在数学上其实可以天然地被解释为 Off-policy。标题里的 **"Secretly an Off-Policy Algorithm"** 就是在说：你以为数据是当前策略亲自采的（On-policy），其实旧数据也能合法地用进来（Off-policy）。
+
+> **"Prosperity before Collapse: How Far Can Off-Policy RL Reach with Stale Data on LLMs?"**
+> _(arXiv 2510.01161, 2025)_
+
+标题里的 **"Off-Policy RL"** + **"Stale Data"**（过期数据）精准点出了 Off-policy 的核心矛盾：数据是旧策略产生的（stale），但你想用它来训练新策略。这篇论文提出 M2PO 算法，通过约束重要性权重的二阶矩，让 Off-policy 训练在 1.7B–32B 的大模型上也能匹配 On-policy 的性能。
+
+> **"On-Policy RL Meets Off-Policy Experts: Harmonizing Supervised Fine-Tuning and Reinforcement Learning via Dynamic Weighting"**
+> _(arXiv 2508.11408, 2025)_
+
+这个标题把 **On-Policy** 和 **Off-Policy** 放在了对立面又试图融合。"On-Policy RL" 指的是模型自己采样、自己学习的 RL 阶段；"Off-Policy Experts" 指的是 SFT 阶段用的人类标注数据（来自"专家"，显然不是当前策略自己产的）。论文提出的 CHORD 框架通过动态权重在这两种数据源之间做调和——这是 LLM 训练中 On/Off-policy 混合的典型场景。
+
+> **"Behaviour Policy Optimization: Provably Lower Variance Return Estimates for Off-Policy Reinforcement Learning"**
+> _(arXiv 2511.10843, AAAI 2026)_
+
+标题里的 **"Behaviour Policy"**（行为策略）和 **"Off-Policy"** 同时出现，正好呼应本节的核心概念：Off-policy 场景下，行为策略 $\mu$ 和目标策略 $\pi$ 是分离的，这篇论文证明了精心设计的行为策略可以带来比 On-policy 采样更低的方差。
+
+**一句话总结：** 看到标题里有 **On-policy**，意味着"模型用自己的数据更新自己"；看到 **Off-policy**，意味着"模型在用别人（或旧版本自己）的数据学习"。
+
+### Online 与 Offline：还能不能继续采数据？
+
+这两个词描述的是**训练过程中数据集是否还在增长**，与 On/Off-policy 是正交的两个维度。
+
+**典型论文标题拆解：**
+
+> **"Offline vs. Online Learning in Model-based RL: Lessons for Data Collection Strategies"**
+> _(arXiv 2509.05735, RLC 2025)_
+
+标题直接把 **Offline** 和 **Online** 对立起来比较。这篇论文在 31 个环境中对比了两种范式，结论是在线智能体普遍优于离线智能体，且离线性能下降的主要原因是测试时遇到了分布外（OOD）状态——这正是 Offline RL 的致命弱点：没见过就是没见过，没机会去试。
+
+> **"Understanding the Performance Gap Between Online and Offline Alignment Algorithms"**
+> _(arXiv 2405.08448, NeurIPS 2024)_
+
+标题里的 **"Online and Offline Alignment"** 把这对概念放在了 LLM 对齐的语境下。Online alignment 指 PPO 这类边采样边训练的方法，Offline alignment 指 DPO 这类在固定偏好数据上直接优化的方法。论文系统性地分析了为什么 Online 方法在性能上通常优于 Offline 方法。
+
+**一句话总结：** 标题里看到 **Online**，意味着训练时还在和环境交互、数据集在增长；看到 **Offline**，意味着数据集已经封存，训练期间不许再碰环境。
+
+### 两轴交叉：四个象限的论文实例
+
+把 On/Off-policy 和 Online/Offline 两条轴交叉，正文中的四个象限各有对应的前沿论文：
+
+| 象限                     | 代表论文                                                                                                                          | 标题关键词解读                                                                                                                                                 |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Online + On-policy**   | PPO (Schulman et al., 2017)、GRPO (DeepSeek, 2024)                                                                                | 边采样边学，用完即弃。                                                                                                                                         |
+| **Online + Off-policy**  | _"TOP-ERL: Transformer-based Off-Policy Episodic Reinforcement Learning"_ (ICLR 2025 Spotlight)                                   | **Off-Policy** 说明用了经验回放复用旧数据，但 **Episodic** 意味着它仍然在持续开新局、采新数据（Online）。                                                      |
+| **Offline + Off-policy** | _"Offline-Boosted Actor-Critic: Adaptively Blending Optimal Historical Behaviors in Deep Off-Policy RL"_ (arXiv 2405.18520, 2024) | **Offline-Boosted** 说明基础数据是离线固定数据集，**Off-Policy** 说明行为策略和目标策略不同。OBAC 从回放池中识别出表现最优的历史策略，用来约束在线策略的学习。 |
+| **Offline + On-policy**  | （边界情形，较少独立出现）                                                                                                        | 数据固定，又要求数据代表当前策略——这几乎只在策略评估或极小步长的模仿学习中出现。                                                                               |
 
 ## 参考文献
 

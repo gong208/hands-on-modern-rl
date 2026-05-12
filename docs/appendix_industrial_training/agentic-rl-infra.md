@@ -201,20 +201,98 @@ curl -X POST http://controller:8000/scale \
 
 ### 与其他框架对比
 
-| 框架     | 出品方      | 特点                              | 多模态 | 异步       |
-| -------- | ----------- | --------------------------------- | ------ | ---------- |
-| AReaL    | 清华 & 蚂蚁 | 全异步，2.77x 提速                | 否     | 全异步     |
-| Agent-R1 | 中科大      | MDP 扩展，过程/结果奖励分离       | 否     | 部分异步   |
-| NeMo Gym | NVIDIA      | 科学 Agent 环境                   | 否     | 同步为主   |
-| Relax    | 小红书      | TransferQueue + 弹性扩展 + 全模态 | 是     | 全异步流式 |
+| 框架     | 出品方             | 特点                              | 多模态 | 异步       |
+| -------- | ------------------ | --------------------------------- | ------ | ---------- |
+| AReaL    | 清华 & 蚂蚁        | 全异步，2.77x 提速                | 否     | 全异步     |
+| Seer     | Moonshot AI (Kimi) | 极致同步，rollout 吞吐 +74–97%    | 否     | 同步       |
+| Agent-R1 | 中科大             | MDP 扩展，过程/结果奖励分离       | 否     | 部分异步   |
+| NeMo Gym | NVIDIA             | 科学 Agent 环境                   | 否     | 同步为主   |
+| slime    | 清华 / 智谱        | Megatron + SGLang，MoE 原生优化   | 否     | 支持异步   |
+| Relax    | 小红书             | TransferQueue + 弹性扩展 + 全模态 | 是     | 全异步流式 |
 
-Relax 是目前唯一同时支持全模态和全异步弹性扩展的 Agentic RL 引擎。论文见 [arxiv.org/abs/2604.11554](https://arxiv.org/abs/2604.11554)，代码见 [github.com/redai-infra/Relax](https://github.com/redai-infra/Relax)。
+Relax 是目前唯一同时支持全模态和全异步弹性扩展的 Agentic RL 引擎。Seer 则代表了另一个方向——不走向异步，而是在同步框架内通过在线上下文学习（divided rollout、context-aware scheduling、adaptive grouped speculative decoding）消除 rollout 长尾延迟，在不改变 GRPO 算法的前提下将吞吐提升 74–97%，同时保持严格的 on-policy 保证（[arXiv:2511.14617](https://arxiv.org/abs/2511.14617)）。slime 把 SGLang 作为原生推理层、Megatron 作为训练后端，对 GLM-4.5、Qwen3-30B-A3B、DeepSeek-R1 等 MoE 模型做了 fp8 rollout、DeepEP 通信等专项优化，适合 MoE 架构的大规模后训练（[THUDM/slime](https://github.com/THUDM/slime)）。Relax 论文见 [arxiv.org/abs/2604.11554](https://arxiv.org/abs/2604.11554)，代码见 [github.com/redai-infra/Relax](https://github.com/redai-infra/Relax)。
 
 ## 选型建议
 
-以下是实践层面的选型建议。原型验证阶段，TRL 配合 subprocess 即可满足需求——先验证训练流程的可行性和 reward 信号的正确性。中等规模（如数百条轨迹并发）可以采用 veRL 或 OpenRLHF，配合 Docker 沙箱和 asyncio 实现异步并发。大规模 Agentic 训练则需要 Relax 或 AReaL 等全异步框架。多模态 Agent 场景下，Relax 是目前唯一的选择。
+以下是实践层面的选型建议。原型验证阶段，TRL 配合 subprocess 即可满足需求——先验证训练流程的可行性和 reward 信号的正确性。需要开箱即用的全流程支持（SFT → DPO/GRPO → 部署）时，[ms-swift](https://github.com/modelscope/ms-swift) 提供了 ModelScope 生态的一体化方案，适合快速上手和国产模型适配。中等规模（如数百条轨迹并发）可以采用 veRL 或 OpenRLHF，配合 Docker 沙箱和 asyncio 实现异步并发。大规模 Agentic 训练则需要 Relax 或 AReaL 等全异步框架。多模态 Agent 场景下，Relax 是目前唯一的选择。
 
 建议遵循渐进式架构演进原则：先验证流程可行性，再做性能优化，最后进行生产化改造。
+
+## 动手：nanoRLHF — 从零实现一个 LLM RL 训练框架
+
+前面的框架分析都是站在使用者视角：每个组件做什么，数据怎么流，GPU 怎么调度。但要真正理解一个 RL 训练框架的内部结构，最好的办法是自己写一个。[hyunwoongko/nanoRLHF](https://github.com/hyunwoongko/nanoRLHF)（181 stars）正是这样一个项目——它用纯 PyTorch + Triton 从零实现了 LLM RLHF 训练所需的全部组件，包括训练引擎、推理引擎、分布式调度和 RL 编排。
+
+nanoRLHF 的定位类似 nanoGPT：把一个生产系统剥离到只保留承重结构。它的目录结构直接对应了 B.1 讨论的系统层级：
+
+```
+nanorlhf/
+├── nanotron/     # 训练引擎（3D parallelism、gradient accumulation、checkpoint）
+├── nanovllm/     # 推理引擎（PagedAttention、KV cache、continuous batching）
+├── nanoverl/     # RL 编排层（PPO trainer、reward、dataset、configs）
+├── nanoray/      # 分布式调度（进程管理、资源分配）
+├── nanosets/     # 数据集工具
+├── kernels/      # Triton kernel（fusion、优化算子）
+└── eval/         # 评测工具
+```
+
+### 训练引擎：nanotron
+
+nanotron 对应 B.1 中的"训练/编排层"的底层——它负责把大模型拆到多张 GPU 上训练。核心实现了 3D parallelism（数据并行 + 流水并行 + 张量并行）、gradient accumulation、mixed precision training 和 checkpoint 管理。
+
+阅读入口：`nanotron/` 目录。重点关注：
+
+- 张量并行如何把一个线性层拆到多张卡上（`nanotron/parallel`）
+- 流水并行如何把模型的不同层分到不同设备（`nanotron/pipeline`）
+- 梯度累积和梯度同步在分布式场景下如何协调
+
+### 推理引擎：nanovllm
+
+nanovllm 对应 B.1 中的"推理/rollout 层"——它负责高吞吐生成 token。核心实现了 PagedAttention（vLLM 的关键技术）、KV cache 管理和 continuous batching。
+
+阅读入口：`nanovllm/` 目录。重点关注：
+
+- PagedAttention 如何避免 KV cache 的显存浪费
+- continuous batching 如何让不同长度的请求共享 GPU
+- 这里的推理引擎和训练引擎之间的权重如何对接
+
+### RL 编排：nanoverl
+
+nanoverl 是把前面两个引擎串起来的编排层，对应 B.1 中 OpenRLHF/veRL 的角色。它实现了 PPO 训练循环：rollout（用 nanovllm 生成）→ reward 计算 → advantage 估计 → PPO clipped loss → 梯度更新（用 nanotron 训练）。
+
+阅读入口：`nanoverl/trainer/` 目录。重点关注：
+
+- PPO 的 fit() 循环如何编排 actor、reference、rollout 三个角色
+- KL 散度惩罚如何实现（reference model 作为锚点）
+- reward 函数如何接入（数学验证场景）
+
+### 推荐阅读路线
+
+整个项目可以按以下顺序阅读，从底层到上层：
+
+1. **`nanotron/`** — 先理解训练引擎如何做分布式训练，因为这是框架的地基
+2. **`nanovllm/`** — 再看推理引擎如何做高吞吐生成，理解 rollout 端的工程问题
+3. **`nanoverl/`** — 最后看 RL 编排如何把两者串成 PPO 循环，理解"生产者-消费者"的数据流
+4. **`nanoray/`** — 如果对分布式调度感兴趣，看进程管理和资源分配
+
+### 动手练习
+
+```bash
+# 克隆项目
+git clone https://github.com/hyunwoongko/nanoRLHF.git
+cd nanoRLHF
+
+# 安装依赖（需要 CUDA GPU）
+pip install -e .
+```
+
+建议完成以下练习：
+
+1. **跑通 SFT 训练**：`bash ./scripts/train_sft.sh`，观察训练日志中的 loss、lr、throughput 指标
+2. **阅读 PPO trainer**：打开 `nanoverl/trainer/`，画出 rollout → reward → advantage → train 的数据流图
+3. **对比 B.1 的框架表**：把 nanoRLHF 的每个模块对应到 OpenRLHF / veRL / slime 的等价组件，理解抽象边界的异同
+4. **修改 reward 函数**：在 `nanoverl/reward/` 中替换为自己的 reward 逻辑（例如字符串匹配、正则提取），跑通一个自定义 reward 的 RL 训练循环
+
+nanoRLHF 的价值不在于生产使用，而在于它用可读的代码把 B.1 讨论的"rollout engine、training backend、weight sync、policy version"这些概念变成了具体实现。读完之后再看 veRL 或 OpenRLHF 的源码，会快得多。
 
 ## 参考文献
 
@@ -225,3 +303,7 @@ Relax 是目前唯一同时支持全模态和全异步弹性扩展的 Agentic RL
 [^2]: PyTorch Blog, "[A Primer on LLM Post-Training](https://pytorch.org/blog/a-primer-on-llm-post-training/)", 2025.
 
 [^3]: AReaL Team. "[AReaL: Async RL for Language Reasoning](https://arxiv.org/abs/2505.24298)." arXiv:2505.24298, 2025. [GitHub](https://github.com/inclusionAI/AReaL)
+
+[^4]: Hou L et al. "[Seer: Online Context Learning for Fast Synchronous LLM Reinforcement Learning](https://arxiv.org/abs/2511.14617)." arXiv:2511.14617, 2025.
+
+[^5]: Ko H. "[nanoRLHF: From-scratch journey into how LLMs and RLHF really work](https://github.com/hyunwoongko/nanoRLHF)." GitHub, 2025.
