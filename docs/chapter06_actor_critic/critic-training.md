@@ -1,4 +1,4 @@
-# 6.2 TD 误差训练 Critic
+# 6.2 Critic 训练
 
 上一节定义了优势函数 $A(s,a) \approx \delta = r + \gamma V(s') - V(s)$，并引出了 Critic 网络作为 $V(s)$ 的估计器。本节展开第 3 章速览过的 [DP、MC、TD](../chapter03_mdp/dp-mc-td) 三种方法在 Critic 训练中的具体实现。
 

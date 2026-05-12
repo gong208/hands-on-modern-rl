@@ -1,6 +1,6 @@
-# 6.4 动手：AlphaGo 简单复现
+# 6.4 动手：AlphaGo 复现
 
-学了策略梯度和 Actor-Critic 之后，我们已经有了两件武器：**策略网络**（决定下一步走哪——回顾：[策略 $\pi_\theta(a|s)$](../chapter05_policy_gradient/policy-gradient)）和**价值网络**（判断局面谁赢面大——回顾：[Critic $V(s)$](./critic-training)）。2016 年，DeepMind 的 AlphaGo 把这两件武器和蒙特卡洛树搜索（MCTS）组合在一起，击败了世界冠军李世石——这是 RL 历史上最出圈的时刻。
+学了策略梯度和 Actor-Critic 之后，我们已经有了两件武器：**策略网络**（决定下一步走哪——回顾：[策略 $\pi_\theta(a|s)$](../chapter05_policy_gradient/reinforce)）和**价值网络**（判断局面谁赢面大——回顾：[Critic $V(s)$](./critic-training)）。2016 年，DeepMind 的 AlphaGo 把这两件武器和蒙特卡洛树搜索（MCTS）组合在一起，击败了世界冠军李世石——这是 RL 历史上最出圈的时刻。
 
 这一节我们用最小的代码复现 AlphaGo 的核心思路：在 6×6 棋盘上训练一个能自己学会下棋的 AI。
 
@@ -12,11 +12,11 @@
 
 AlphaGo 由三个核心组件构成：
 
-| 组件           | 作用                       | 对应本章概念                                                    |
-| -------------- | -------------------------- | --------------------------------------------------------------- |
-| 策略网络       | 给出每个合法落子位置的概率 | [第 5 章策略梯度](../chapter05_policy_gradient/policy-gradient) |
-| 价值网络       | 评估当前局面的胜率         | [第 6.2 节 Critic 训练](./critic-training)                      |
-| 蒙特卡洛树搜索 | 向前看若干步，找到最佳落子 | 这一节新引入                                                    |
+| 组件           | 作用                       | 对应本章概念                                              |
+| -------------- | -------------------------- | --------------------------------------------------------- |
+| 策略网络       | 给出每个合法落子位置的概率 | [第 5 章策略梯度](../chapter05_policy_gradient/reinforce) |
+| 价值网络       | 评估当前局面的胜率         | [第 6.2 节 Critic 训练](./critic-training)                |
+| 蒙特卡洛树搜索 | 向前看若干步，找到最佳落子 | 这一节新引入                                              |
 
 它们的关系是：MCTS 是"大脑"，策略网络提供"直觉"（优先搜索哪些分支），价值网络提供"判断"（不用搜到底就能评估局面）。
 
@@ -518,7 +518,7 @@ def train_alphago(num_iterations=20, games_per_iter=10, num_epochs=5):
 1. **自我对弈**：用当前模型 + MCTS 下棋，收集 (局面, MCTS策略, 胜负) 三元组
 2. **网络训练**：策略网络学习模仿 MCTS 的搜索结果，价值网络学习预测最终胜负
 
-这和第 5 章的[策略梯度](../chapter05_policy_gradient/policy-gradient)有一个微妙但重要的区别：AlphaGo 的策略网络不是直接从对弈回报学习（像 REINFORCE），而是**学习模仿 MCTS 的搜索结果**。MCTS 做了大量模拟后给出的策略比单次采样可靠得多——这相当于一个天然的低方差基线。
+这和第 5 章的[策略梯度](../chapter05_policy_gradient/reinforce)有一个微妙但重要的区别：AlphaGo 的策略网络不是直接从对弈回报学习（像 REINFORCE），而是**学习模仿 MCTS 的搜索结果**。MCTS 做了大量模拟后给出的策略比单次采样可靠得多——这相当于一个天然的低方差基线。
 
 ## 人机对弈
 
@@ -578,13 +578,13 @@ def env_to_string(board):
 
 把 AlphaGo 的每个组件对应回本章学过的知识：
 
-| AlphaGo 组件  | 对应概念                 | 出处                                                         |
-| ------------- | ------------------------ | ------------------------------------------------------------ |
-| 策略网络      | Actor，输出动作概率      | [策略梯度定理](../chapter05_policy_gradient/policy-gradient) |
-| 价值网络      | Critic，评估局面价值     | [Actor-Critic 架构](./actor-critic)                          |
-| MCTS 策略监督 | 降低方差的"可靠策略信号" | [基线实验](../chapter05_policy_gradient/baseline-experiment) |
-| 自我对弈      | 在线采样 + 策略改进      | REINFORCE 的采样思想                                         |
-| $-v$ 回传     | 零和博弈的对称性         | [优势函数](./advantage-function)的符号翻转                   |
+| AlphaGo 组件  | 对应概念                 | 出处                                                   |
+| ------------- | ------------------------ | ------------------------------------------------------ |
+| 策略网络      | Actor，输出动作概率      | [策略梯度定理](../chapter05_policy_gradient/reinforce) |
+| 价值网络      | Critic，评估局面价值     | [Actor-Critic 架构](./actor-critic)                    |
+| MCTS 策略监督 | 降低方差的"可靠策略信号" | [基线](../chapter05_policy_gradient/pg-improvements)   |
+| 自我对弈      | 在线采样 + 策略改进      | REINFORCE 的采样思想                                   |
+| $-v$ 回传     | 零和博弈的对称性         | [优势函数](./advantage-function)的符号翻转             |
 
 你会发现：AlphaGo 的核心就是 Actor-Critic + MCTS 搜索。策略网络（Actor）提供搜索方向，价值网络（Critic）提供叶子节点评估，MCTS 把两者组合成比任何单一组件都强的决策。这个"Actor 提供先验 + Critic 提供评估 + 搜索做整合"的模式，后来被 AlphaZero 推广到国际象棋和将棋，也影响了后续许多 RL 算法的设计。
 

@@ -2,7 +2,7 @@
 
 第 4 章走了路线一（Value-Based）：学 $Q(s,a)$，选分数最高的（回顾：[Q(s,a) 与贪心策略](../chapter03_mdp/value-q)）。打分准确，但不擅长探索，且只能处理离散动作。第 5 章走了路线二（Policy-Based）：直接优化 $J(\theta)$（回顾：[策略目标函数](../chapter03_mdp/policy-objective)）。擅长探索、支持连续动作，但方差太大——同一策略跑两次，梯度估计可能天差地别。
 
-上一章末尾我们发现了一个关键线索：减掉基线可以降低方差（回顾：[Baseline 实验](../chapter05_policy_gradient/baseline-experiment)），而最好的基线就是 $V(s)$（回顾：[状态价值函数](../chapter03_mdp/value-bellman)）。但 $V(s)$ 本身也需要学习——需要一个专门的网络来估计它。这个网络就是 **Critic**。
+上一章末尾我们发现了一个关键线索：减掉基线可以降低方差（回顾：[策略梯度的改进](../chapter05_policy_gradient/pg-improvements)），而最好的基线就是 $V(s)$（回顾：[状态价值函数](../chapter03_mdp/value-bellman)）。但 $V(s)$ 本身也需要学习——需要一个专门的网络来估计它。这个网络就是 **Critic**。
 
 本章将把两条路线拼在一起：用路线一的方法训练一个 Critic 来评估动作好坏，用路线二的方法训练一个 Actor 来选动作。这就是 **Actor-Critic 架构**。
 
@@ -14,16 +14,18 @@
 - [DP/MC/TD 三种价值估计方法](../chapter03_mdp/dp-mc-td)——训练 Critic 的三种策略
 - [TD Error $\delta = r + \gamma V(s') - V(s)$](../chapter03_mdp/dp-mc-td)——Critic 的核心训练信号
 - [策略目标 $J(\theta)$ 与策略梯度](../chapter03_mdp/policy-objective)——Actor 的优化目标
-- [REINFORCE 与基线实验](../chapter05_policy_gradient/baseline-experiment)——为什么需要 $V(s)$ 作为基线
+- [REINFORCE 与基线](../chapter05_policy_gradient/pg-improvements)——为什么需要 $V(s)$ 作为基线
   :::
 
 ## 本章结构
 
-| 小节                                 | 核心问题                                            |
-| ------------------------------------ | --------------------------------------------------- |
-| [优势函数](./advantage-function)     | 优势函数 $A(s,a)$ 是什么？为什么它比 $G_t$ 更好？   |
-| [Critic 训练方法](./critic-training) | 怎么训练 Critic 来估计 $V(s)$？DP/MC/TD 的具体实现  |
-| [Actor-Critic 架构](./actor-critic)  | Actor 和 Critic 怎么协作？TD Error 如何替代 $G_t$？ |
-| [项目：AlphaGo 简易复现](./alphago)  | Actor-Critic + MCTS 能做什么？                      |
+| 小节                                            | 核心问题                                                |
+| ----------------------------------------------- | ------------------------------------------------------- |
+| [优势函数](./advantage-function)                | 优势函数 $A(s,a)$ 是什么？为什么它比 $G_t$ 更好？       |
+| [Critic 训练](./critic-training)                | 怎么训练 Critic 来估计 $V(s)$？DP/MC/TD 的具体实现      |
+| [Actor-Critic 架构](./actor-critic)             | Actor 和 Critic 怎么协作？TD Error 如何替代 $G_t$？     |
+| [Actor-Critic 的前沿大规模应用](./ac-frontier)  | AlphaStar、SAC 机器人、Isaac Lab——AC 架构在工业级的落地 |
+| [动手：Pendulum 摆杆平衡](./pendulum)           | Actor-Critic 如何处理连续动作空间？                     |
+| [动手：BipedalWalker 双足行走](./bipedalwalker) | Actor-Critic 能学会复杂的连续控制吗？                   |
 
 让我们从优势函数开始——它是连接 Actor 和 Critic 的桥梁。[优势函数](./advantage-function)
