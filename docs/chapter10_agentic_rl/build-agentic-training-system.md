@@ -96,6 +96,7 @@ flowchart LR
 ```
 
 在 RLHF 中：
+
 - **推理**是对一个 batch 的 prompt **并行**生成 completion，过程完全在 GPU 内完成，不需要与外部环境交互。
 - **训练**是对这一批 completion 统一计算 reward、advantage，然后做一次梯度更新。
 - 两个阶段内部都是**连续的 GPU 运算**，中间没有 I/O 中断，可以高效地按 batch 对齐：一批推理 → 一批训练。
@@ -164,12 +165,12 @@ Train 阶段的核心任务是"从轨迹中计算 advantage，然后做梯度更
 
 ### 组件总览
 
-| 组件 | 解决什么问题 | 对应训练阶段 |
-|------|-----------|-----------|
-| **Environment** | Agent 生成的代码在哪里安全执行？ | Rollout |
-| **Policy** | 谁生成动作？谁接受梯度更新？ | Rollout + Train |
-| **RolloutWorker** | 怎么把单步推理串成多轮交互循环？ | Rollout |
-| **Trainer** | 怎么组织"采样 → 算 advantage → 梯度更新"的训练循环？ | Train（编排） |
+| 组件              | 解决什么问题                                         | 对应训练阶段    |
+| ----------------- | ---------------------------------------------------- | --------------- |
+| **Environment**   | Agent 生成的代码在哪里安全执行？                     | Rollout         |
+| **Policy**        | 谁生成动作？谁接受梯度更新？                         | Rollout + Train |
+| **RolloutWorker** | 怎么把单步推理串成多轮交互循环？                     | Rollout         |
+| **Trainer**       | 怎么组织"采样 → 算 advantage → 梯度更新"的训练循环？ | Train（编排）   |
 
 下面我们先看一个完整的交互例子，然后逐个实现这四个组件。
 
@@ -179,23 +180,23 @@ Train 阶段的核心任务是"从轨迹中计算 advantage，然后做梯度更
 
 理想情况下，Agent 一次写对：
 
-| Turn | 角色 | 内容 |
-|------|------|------|
-| 0 | User | "计算斐波那契数列第 10 项" |
-| 1 | Agent | 生成 Python 代码 `def fib(n): ...` |
-| 1 | 环境 | 执行代码，返回 `55` |
-| 2 | Agent | FINAL ANSWER: 55
+| Turn | 角色  | 内容                               |
+| ---- | ----- | ---------------------------------- |
+| 0    | User  | "计算斐波那契数列第 10 项"         |
+| 1    | Agent | 生成 Python 代码 `def fib(n): ...` |
+| 1    | 环境  | 执行代码，返回 `55`                |
+| 2    | Agent | FINAL ANSWER: 55                   |
 
 但更多时候，Agent 会写出有 bug 的代码，在报错后修正：
 
-| Turn | 角色 | 内容 |
-|------|------|------|
-| 0 | User | "计算斐波那契数列第 10 项" |
-| 1 | Agent | 生成了有 bug 的代码 |
-| 1 | 环境 | 返回 `ERROR: NameError` |
-| 2 | Agent | 看到 ERROR，修改代码 |
-| 2 | 环境 | 执行修正后的代码，返回 `55` |
-| 3 | Agent | FINAL ANSWER: 55
+| Turn | 角色  | 内容                        |
+| ---- | ----- | --------------------------- |
+| 0    | User  | "计算斐波那契数列第 10 项"  |
+| 1    | Agent | 生成了有 bug 的代码         |
+| 1    | 环境  | 返回 `ERROR: NameError`     |
+| 2    | Agent | 看到 ERROR，修改代码        |
+| 2    | 环境  | 执行修正后的代码，返回 `55` |
+| 3    | Agent | FINAL ANSWER: 55            |
 
 这个例子展示了 Agent 与环境交互的完整过程。在理想情况下 Agent 一次写对，但更多时候它需要多轮试错。无论哪种情况，交互模式都是固定的：Agent 生成动作 → 环境执行并返回观测 → Agent 根据观测决定下一步。
 
@@ -234,7 +235,7 @@ import os
 
 class SandboxEnv:
     """最轻量的沙箱：subprocess + 资源限制
-    
+
     职责：接收 Agent 的动作，在隔离环境中执行，返回 (observation, done)。
     隔离方式：通过 subprocess 在独立进程中执行代码，防止死循环/恶意代码影响训练主进程。
     """
@@ -245,7 +246,7 @@ class SandboxEnv:
 
     def step(self, action_type: str, action_args: dict) -> dict:
         """执行一步动作，返回观测和终止状态。
-        
+
         对应 POMDP 的观测函数 O(s_t)：给定动作，返回 (observation, done)。
         支持两种动作类型：execute_code（执行代码）和 finish（结束 episode）。
         """
@@ -258,7 +259,7 @@ class SandboxEnv:
 
     def _exec_code(self, code: str) -> dict:
         """在子进程中执行代码，限制 CPU 时间和内存。
-        
+
         核心隔离机制：
         1. 创建临时文件写入代码（避免污染主进程文件系统）
         2. subprocess.run() 在独立进程中执行
@@ -290,7 +291,7 @@ class SandboxEnv:
 
     def reset(self):
         """重置环境状态（新 episode 开始时调用）。
-        
+
         本最小实现中沙箱是无状态的，不需要清理。
         生产环境中可能需要清空文件系统、重置网络等。
         """
@@ -335,7 +336,7 @@ import torch.nn.functional as F
 
 class Policy:
     """包装一个语言模型，提供两套接口。
-    
+
     核心问题：同一份权重需要同时支持推理（rollout）和训练（梯度更新）。
     解决方案：
       - generate() / get_logprobs()：rollout 阶段使用，@torch.no_grad() 不计算梯度
@@ -350,7 +351,7 @@ class Policy:
 
     def set_ref_model(self, ref_model):
         """保存一份初始权重的拷贝，用作 KL 散度计算的锚点。
-        
+
         目的：防止训练后的策略偏离初始策略太远，保持输出分布的稳定性。
         """
         self.ref_model = ref_model
@@ -358,7 +359,7 @@ class Policy:
     @torch.no_grad()
     def generate(self, prompt: str, max_new_tokens=128) -> str:
         """推理模式：给定 prompt，生成文本。
-        
+
         对应 rollout 阶段的 "模型生成动作"。
         使用 @torch.no_grad() 是因为 rollout 不需要计算梯度，节省显存。
         """
@@ -369,10 +370,10 @@ class Policy:
     @torch.no_grad()
     def get_logprobs(self, prompt: str, response: str) -> torch.Tensor:
         """计算模型对给定 response 中每个 token 的 log probability。
-        
+
         rollout 阶段：用于计算当前策略对新轨迹的概率（重要性采样）。
         训练阶段：用于计算 new_logprobs（当前策略）和 ref_logprobs（旧策略）。
-        
+
         关键细节：只取 response 部分（不包含 prompt）的 log prob。
         """
         full_text = prompt + response
@@ -393,13 +394,13 @@ class Policy:
 
     def train_step_with_advantage(self, trajectories: list):
         """一个 GRPO 训练步（REINFORCE + advantage + KL 惩罚）。
-        
+
         参数：
             trajectories: list of (prompt, response, advantage)
                           prompt: 初始问题
                           response: Agent 生成的完整交互文本
                           advantage: GRPO 归一化后的优势值
-        
+
         计算流程：
         1. 对每条轨迹计算 new_logprobs（当前策略的概率）
         2. 如果有 ref_model，计算 KL 散度惩罚
@@ -465,7 +466,7 @@ flowchart TD
 
 class RolloutWorker:
     """驱动 Agent Loop，收集多轮交互轨迹。
-    
+
     核心职责：把 "生成→执行→观察→再生成" 的多轮循环串起来。
     每次 rollout 产出一条完整轨迹，包含 prompt、所有交互轮次、最终回答、reward。
     """
@@ -477,7 +478,7 @@ class RolloutWorker:
 
     def rollout(self, prompt: str, reward_fn) -> dict:
         """执行一次完整的 Agent Loop，返回轨迹和 reward。
-        
+
         对应训练循环中的 Rollout 阶段：
         1. 初始化对话历史（只有 prompt）
         2. 循环（最多 max_turns 轮）：
@@ -537,7 +538,7 @@ class RolloutWorker:
 
     def _format_context(self, messages):
         """把多轮消息列表拼成模型能理解的 prompt。
-        
+
         生产框架会用 tokenizer 的 chat_template，这里用最简单的字符串拼接。
         """
         parts = []
@@ -550,12 +551,12 @@ class RolloutWorker:
 
     def _parse_action(self, model_output: str) -> dict:
         """从模型自由文本输出中解析结构化动作。
-        
+
         支持两种动作格式：
         1. ```python ... ``` → execute_code（提取代码块内容）
         2. FINAL ANSWER: ... → finish（提取最终答案）
         3. 其他 → execute_code（把整个输出当作代码执行）
-        
+
         生产框架会用特殊 token 做结构化解析，这里用字符串匹配足够理解概念。
         """
         if "```python" in model_output:
@@ -599,7 +600,7 @@ from rollout_worker import RolloutWorker
 
 class GRPOAgentTrainer:
     """编排 Agentic RL 训练循环：rollout -> reward -> train -> repeat。
-    
+
     核心职责：把 Policy、Environment、RolloutWorker 组装成完整的训练流水线。
     每一轮训练包含四个阶段（对应 fit() 中的四个代码块）：
     1. Rollout：对每个 prompt 采样 group_size 条轨迹
@@ -619,7 +620,7 @@ class GRPOAgentTrainer:
 
     def fit(self, prompts: list, n_steps: int = 50):
         """主训练循环：重复 n_steps 次 (rollout -> reward -> train)。
-        
+
         参数：
             prompts: 训练用的编程题列表
             n_steps: 训练步数（每步 = 一轮完整的 rollout + train）
@@ -683,14 +684,14 @@ class GRPOAgentTrainer:
 
     def _serialize_trajectory(self, traj: dict) -> str:
         """把多轮轨迹序列化为一段文本，用于 train_step。
-        
+
         序列化格式：
             Assistant: <动作1>
             Observation: <结果1>
             Assistant: <动作2>
             Observation: <结果2>
             ...
-        
+
         注意：这里做了简化，所有 token 都参与 loss。
         生产框架会用 loss mask 区分模型生成的 token（参与 loss）
         和环境返回的 token（被 mask 掉），见 B.2 的讨论。
@@ -764,7 +765,7 @@ policy.set_ref_model(ref_model)
 # 这里用简单规则：如果某轮执行没有报错/超时，认为答案正确，reward=1
 def code_reward(trajectory):
     """判断轨迹中是否有成功的代码执行结果。
-    
+
     注意：这是一个简化版的 reward。
     生产环境中 reward 可能由规则 + RM + LLM-as-Judge 组合给出。
     """

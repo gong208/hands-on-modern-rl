@@ -22,6 +22,12 @@
 
 这个实验很适合作为 Agentic RL 的第一个业务案例，因为它同时具备三个特点：任务来自真实财报，工具调用路径清晰，训练和评测都可以完整复现。
 
+![Snorkel × rLLM 合作推出金融分析 Agent 训练方案](./images/finqa-snorkel-rllm-banner.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 1：Snorkel 与 rLLM 合作推出金融分析 Agent 后训练方案，4B 模型在 Snorkel Finance Benchmark 上超越 235B 通用模型。来源：<a href="https://snorkel.ai/" target="_blank" rel="noopener noreferrer">Snorkel AI</a></em>
+</div>
+
 ## 为什么金融问答适合 Agentic RL
 
 先看直觉。金融问题通常不是“背一个事实”，而是“从一组结构化材料中取数、计算、解释”。比如“毛利率同比变化多少”“经营现金流是否覆盖资本开支”“某项费用占收入比例是多少”。这些问题有两个共同点。
@@ -88,6 +94,12 @@ flowchart TD
     style Q fill:#e3f2fd,stroke:#1976d2,color:#000
     style A fill:#e8f5e9,stroke:#388e3c,color:#000
 ```
+
+![rLLM-FinQA 的金融 Agent 环境：模型通过四个工具与 SEC 财报表格交互](./images/finqa-snorkel-env-diagram.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 2：rLLM-FinQA 的 Agent 环境。模型面对一个金融问题时，通过 get_table_names、get_table_info、sql_query 和 calculator 四个工具与 SEC 10-K 财报表格交互，完成多步推理和计算。来源：<a href="https://snorkel.ai/" target="_blank" rel="noopener noreferrer">Snorkel AI</a></em>
+</div>
 
 真正的问题在于，模型一开始并不知道这条路径。它可能直接写 SQL，也可能查错表，可能把 revenue 写成 net income，也可能拿到两个数字后算错比例。后训练要优化的，正是这些行为概率：正确的工具选择应该更常出现，错误的查表和计算路径应该被压低。
 
@@ -277,6 +289,12 @@ bash projects/finqa/train_finqa_tinker.sh
 | rLLM-FinQA-4B  | 4B       | 59.7%                            |
 | Gemini 2.5 Pro | 未公开   | 60.6%                            |
 | Qwen3-235B     | 235B     | 51.4%                            |
+
+![Snorkel Finance Benchmark 各模型评测指标对比](./images/finqa-benchmark-comparison.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 3：Snorkel Finance Benchmark 各模型评测指标对比。rLLM-FinQA-4B 在金融分析任务上达到 59.7%，接近 Gemini 2.5 Pro 的 60.6%，远超 Qwen3-235B 的 51.4%。来源：<a href="https://snorkel.ai/" target="_blank" rel="noopener noreferrer">Snorkel AI</a></em>
+</div>
 
 这个结果说明一件重要的事：在强工具环境和合适 reward 下，小模型可以通过后训练超过大得多的通用模型。原因并不神秘。235B 通用模型有更强的语言能力，但它没有专门学过“面对 SEC 表格时应该如何查表、写 SQL、计算和回答”。4B 金融 Agent 的优势来自任务分布上的专门训练。
 

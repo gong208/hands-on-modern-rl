@@ -8,20 +8,26 @@
 
 我们将以 Qwen2.5-Coder-3B-Instruct 作为基座模型，用 rLLM 框架做 GRPO RL 训练，在 LiveCodeBench 测试集上评测。预期结果：
 
-| 阶段 | 模型 | LiveCodeBench Pass@1 | 说明 |
-|------|------|---------------------|------|
-| **训练前** | Qwen2.5-Coder-3B-Instruct（基座） | ~30% | 未经 RL 训练的原始模型 |
-| **训练后** | + DeepCoder RL（1 epoch, LoRA rank 32） | ~38-40% | RL 训练后提升 8-10 个百分点 |
+| 阶段       | 模型                                    | LiveCodeBench Pass@1 | 说明                        |
+| ---------- | --------------------------------------- | -------------------- | --------------------------- |
+| **训练前** | Qwen2.5-Coder-3B-Instruct（基座）       | ~30%                 | 未经 RL 训练的原始模型      |
+| **训练后** | + DeepCoder RL（1 epoch, LoRA rank 32） | ~38-40%              | RL 训练后提升 8-10 个百分点 |
 
 如果用更大的模型和更长的训练，效果更显著：
 
-| 模型 | LiveCodeBench Pass@1 |
-|------|---------------------|
-| Qwen3-4B-Instruct（基座） | ~38% |
-| + DeepCoder RL（1 epoch） | ~46% |
+| 模型                              | LiveCodeBench Pass@1  |
+| --------------------------------- | --------------------- |
+| Qwen3-4B-Instruct（基座）         | ~38%                  |
+| + DeepCoder RL（1 epoch）         | ~46%                  |
 | DeepCoder-14B-Preview（完整训练） | 60.6%（匹配 o3-mini） |
 
 本节动手实验聚焦在 3B 模型上——单卡 24GB 显存即可完成，让你亲自验证"RL 训练确实能让代码 Agent 变强"。
+
+![DeepCoder 在 LiveCodeBench 上的得分进展，14B 模型 64K 推理达到 60.6%，匹配 o3-mini 水平](./images/deepcoder-verl-arch.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 1：DeepCoder 在 LiveCodeBench 上的得分进展。DeepCoder-14B-Preview（64K 推理）达到 60.6% Pass@1，匹配 o3-mini 水平。来源：<a href="https://pretty-radio-b75.notion.site/DeepCoder-A-Fully-Open-Source-14B-Coder-at-O3-mini-Level-1cf81902c14680b3bee5eb349a512a51" target="_blank" rel="noopener noreferrer">Agentica Blog</a></em>
+</div>
 
 ## rLLM 框架速览
 
@@ -37,12 +43,18 @@ flowchart LR
 
 rLLM 已在多个任务上验证有效性：
 
-| 项目 | 模型规模 | 成果 |
-|------|----------|------|
-| **DeepCoder** | 14B | LiveCodeBench 60.6%，匹配 o3-mini [^deepcoder] |
-| **DeepScaleR** | 1.5B | AIME 2024 43.1%，超越 O1-Preview [^deepscaleR] |
-| **DeepSWE** | 32B | SWEBench-Verified 59%，开源 SOTA [^deepswe] |
-| **FinQA** | 4B | 金融分析超 Qwen3-235B（59.7% vs 51.4%）[^finqa] |
+| 项目           | 模型规模 | 成果                                            |
+| -------------- | -------- | ----------------------------------------------- |
+| **DeepCoder**  | 14B      | LiveCodeBench 60.6%，匹配 o3-mini [^deepcoder]  |
+| **DeepScaleR** | 1.5B     | AIME 2024 43.1%，超越 O1-Preview [^deepscaleR]  |
+| **DeepSWE**    | 32B      | SWEBench-Verified 59%，开源 SOTA [^deepswe]     |
+| **FinQA**      | 4B       | 金融分析超 Qwen3-235B（59.7% vs 51.4%）[^finqa] |
+
+![DeepCoder 训练管线：从数据采样到 sandbox 验证再到 GRPO 更新的完整流程](./images/deepcoder-training-pipeline.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 2：DeepCoder 的 RL 训练管线。从数据采样、模型生成、sandbox 验证到 GRPO 策略更新的完整循环。来源：<a href="https://pretty-radio-b75.notion.site/DeepCoder-A-Fully-Open-Source-14B-Coder-at-O3-mini-Level-1cf81902c14680b3bee5eb349a512a51" target="_blank" rel="noopener noreferrer">Agentica Blog</a></em>
+</div>
 
 ## 第零步：环境准备
 
@@ -85,7 +97,6 @@ python -m vllm.entrypoints.openai.api_server \
 
 端点启动后，`http://localhost:8000/v1` 就是 rLLM 的 `--base-url`。后续所有 `rllm eval` 和 `rllm train` 都会通过这个端点调用模型。
 
-
 ---
 
 ## 第一步：用 rLLM 设计 Reward
@@ -122,19 +133,19 @@ def my_evaluator(task: Task, episode: Episode) -> EvalOutput:
 
 **输入是什么？**
 
-| 参数 | 类型 | 包含什么 |
-|------|------|----------|
-| `task` | `Task` | 题目信息：`task.instruction`（用户 prompt）、`task.metadata`（ground truth 等） |
+| 参数      | 类型      | 包含什么                                                                                  |
+| --------- | --------- | ----------------------------------------------------------------------------------------- |
+| `task`    | `Task`    | 题目信息：`task.instruction`（用户 prompt）、`task.metadata`（ground truth 等）           |
 | `episode` | `Episode` | agent 的完整执行记录：`episode.artifacts`（最终输出）、`episode.trajectories`（每步详情） |
 
 **输出是什么？**
 
-| 字段 | 类型 | 含义 |
-|------|------|------|
-| `reward` | `float` | 总分，0.0~1.0。RL 训练直接优化这个值 |
-| `is_correct` | `bool` | 是否通过。用于统计 Pass@1 |
-| `signals` | `list[Signal]` | 分维度得分。**这是判断模型好坏的关键**——只看 reward 无法区分"差在哪" |
-| `metadata` | `dict` | 附加详情。可以存每个测试用例的 pass/fail、judge 的评语等 |
+| 字段         | 类型           | 含义                                                                 |
+| ------------ | -------------- | -------------------------------------------------------------------- |
+| `reward`     | `float`        | 总分，0.0~1.0。RL 训练直接优化这个值                                 |
+| `is_correct` | `bool`         | 是否通过。用于统计 Pass@1                                            |
+| `signals`    | `list[Signal]` | 分维度得分。**这是判断模型好坏的关键**——只看 reward 无法区分"差在哪" |
+| `metadata`   | `dict`         | 附加详情。可以存每个测试用例的 pass/fail、judge 的评语等             |
 
 ### 三种 Reward 设计范式
 
@@ -244,12 +255,12 @@ total_reward = hard_reward + llm_reward  # 最高 1.0
 
 ### 设计 Reward 的常见陷阱
 
-| 陷阱 | 表现 | 解法 |
-|------|------|------|
-| **Reward 过于稀疏** | 只有 0/1，大部分时候都是 0，模型学不到东西 | 加中间奖励（如格式正确 +0.2），或增大 GRPO 的 group_size |
-| **Reward hacking** | 模型找到了漏洞（如堆砌关键词拿高分而非真正理解） | 多维度交叉验证，定期用独立评测集检查 |
-| **Judge 不稳定** | 同一个回答两次 judge 给出不同分数 | 固定 temperature=0，用确定性评分标准（rubric），多次采样取均值 |
-| **维度冲突** | 格式奖励和内容奖励打架——模型只顾格式不顾内容 | 硬性约束作为前置条件（格式不对直接 0 分），质量分数作为加分项 |
+| 陷阱                | 表现                                             | 解法                                                           |
+| ------------------- | ------------------------------------------------ | -------------------------------------------------------------- |
+| **Reward 过于稀疏** | 只有 0/1，大部分时候都是 0，模型学不到东西       | 加中间奖励（如格式正确 +0.2），或增大 GRPO 的 group_size       |
+| **Reward hacking**  | 模型找到了漏洞（如堆砌关键词拿高分而非真正理解） | 多维度交叉验证，定期用独立评测集检查                           |
+| **Judge 不稳定**    | 同一个回答两次 judge 给出不同分数                | 固定 temperature=0，用确定性评分标准（rubric），多次采样取均值 |
+| **维度冲突**        | 格式奖励和内容奖励打架——模型只顾格式不顾内容     | 硬性约束作为前置条件（格式不对直接 0 分），质量分数作为加分项  |
 
 ### signals 的重要性
 
@@ -266,8 +277,6 @@ Epoch 1 | reward_mean: 0.45 | format: 0.92 | accuracy: 0.28 | budget_ok: 0.15
 ```
 
 这样你就知道下一步应该：在 reward 里加大 budget_ok 的权重，或者增加预算控制相关的训练数据。
-
-
 
 ## 第二步：数据长什么样？
 
@@ -708,6 +717,18 @@ GRPO 的训练循环（对应第 8 章的算法）：
      - 对 advantage < 0 的解法：降低模型生成类似代码的概率
      - 通过 LoRA 更新，只改少量参数
 ```
+
+![GRPO+ 与 GRPO 在训练过程中的平均奖励对比](./images/deepcoder-grpo-rewards.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 3：GRPO+ 与标准 GRPO 的训练奖励曲线对比。GRPO+ 通过改进的组内优势估计，在相同数据量下获得更高的平均奖励。来源：<a href="https://pretty-radio-b75.notion.site/DeepCoder-A-Fully-Open-Source-14B-Coder-at-O3-mini-Level-1cf81902c14680b3bee5eb349a512a51" target="_blank" rel="noopener noreferrer">Agentica Blog</a></em>
+</div>
+
+![LiveCodeBench 得分随训练进展的变化，展示 16K→32K 上下文长度扩展的效果](./images/deepcoder-lcb-scores.png)
+
+<div style="text-align: center; font-size: 0.9em; color: var(--vp-c-text-2); margin-top: -10px; margin-bottom: 20px;">
+  <em>图 4：LiveCodeBench Pass@1 得分随训练步数的变化。从 16K 到 32K 上下文长度扩展后，模型解题能力持续提升。来源：<a href="https://pretty-radio-b75.notion.site/DeepCoder-A-Fully-Open-Source-14B-Coder-at-O3-mini-Level-1cf81902c14680b3bee5eb349a512a51" target="_blank" rel="noopener noreferrer">Agentica Blog</a></em>
+</div>
 
 ### 训练日志怎么读
 
