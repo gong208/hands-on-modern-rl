@@ -47,21 +47,27 @@ class TrainingMonitorCallback(BaseCallback):
     """
     自定义回调：在每次 rollout 结束后记录 PPO 的关键训练指标
     包括：回合奖励、策略熵、裁剪比例、近似 KL 散度
+    支持在指定步数保存检查点模型
     """
 
-    def __init__(self, check_freq=2048, verbose=1):
+    def __init__(self, check_freq=2048, checkpoint_steps=None, verbose=1):
         super().__init__(verbose)
         self.check_freq = check_freq
+        self.checkpoint_steps = checkpoint_steps or []
         self.episode_rewards = []
         self.entropy_list = []
         self.clip_fraction_list = []
         self.approx_kl_list = []
         self.timesteps_list = []
+        self._saved_checkpoints = set()
 
     def _on_step(self):
         for info in self.locals.get("infos", []):
             if "episode" in info:
-                self.episode_rewards.append(info["episode"]["r"])
+                ep_info = info["episode"]
+                self.episode_rewards.append(
+                    ep_info["r"] if isinstance(ep_info, dict) else ep_info
+                )
 
         if self.num_timesteps % self.check_freq == 0 and self.num_timesteps > 0:
             logger = self.model.logger
@@ -76,6 +82,14 @@ class TrainingMonitorCallback(BaseCallback):
                 self.clip_fraction_list.append(clip_frac)
                 self.approx_kl_list.append(approx_kl)
                 self.timesteps_list.append(self.num_timesteps)
+
+        # 保存检查点
+        for ckpt_step in self.checkpoint_steps:
+            if self.num_timesteps >= ckpt_step and ckpt_step not in self._saved_checkpoints:
+                path = f"output/ppo_bipedal_walker_{ckpt_step // 1000}k"
+                self.model.save(path)
+                print(f"\n  [检查点] 已保存 {ckpt_step // 1000}k 步模型 → {path}.zip")
+                self._saved_checkpoints.add(ckpt_step)
 
         return True
 
@@ -95,6 +109,7 @@ def make_env():
     """环境工厂函数"""
     def _init():
         env = gym.make("BipedalWalker-v3")
+        env = gym.wrappers.RecordEpisodeStatistics(env)
         return env
     return _init
 
@@ -142,7 +157,11 @@ total_timesteps = args.total_timesteps
 print(f"\n开始训练（{total_timesteps:,} 时间步）...")
 print("-" * 50)
 
-callback = TrainingMonitorCallback(check_freq=2048)
+# 训练过程中自动保存检查点（用于三阶段对比回放）
+checkpoint_steps = []
+if total_timesteps >= 500_000:
+    checkpoint_steps = [100_000, 500_000]
+callback = TrainingMonitorCallback(check_freq=2048, checkpoint_steps=checkpoint_steps)
 
 model.learn(
     total_timesteps=total_timesteps,
@@ -162,14 +181,16 @@ print("\n正在绘制训练曲线...")
 output_dir = Path("output")
 output_dir.mkdir(exist_ok=True)
 
-# 图1：回合奖励曲线
+# 图1：回合奖励曲线（原始值 + 滑动平均）
 if callback.episode_rewards:
     rewards = callback.episode_rewards
     window = min(50, max(1, len(rewards)))
     smoothed = np.convolve(rewards, np.ones(window) / window, mode="valid")
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    ax.plot(smoothed, color="#2196F3", alpha=0.8, linewidth=1.5, label="滑动平均")
+    ax.plot(rewards, color="#90CAF9", alpha=0.4, linewidth=0.8, label="原始值")
+    x_smooth = np.arange(window // 2, window // 2 + len(smoothed))
+    ax.plot(x_smooth, smoothed, color="#1565C0", alpha=0.9, linewidth=1.8, label="50 回合滑动平均")
     ax.axhline(y=300, color="green", linestyle="--", alpha=0.5, label="solved (300)")
     ax.axhline(y=0, color="gray", linestyle=":", alpha=0.3)
     ax.set_title("PPO BipedalWalker-v3 回合奖励", fontsize=14, fontweight="bold")

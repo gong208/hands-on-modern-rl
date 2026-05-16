@@ -74,9 +74,9 @@ Episode reward is the most direct metric: the cumulative return at the end of ea
 
 The overall trend can be divided into three stages:
 
-- **First ~200 episodes (~250k steps)**: rewards hover around -110. The policy has essentially learned nothing; the robot falls almost every episode. At this stage PPO is mostly collecting experience and has not yet discovered useful action patterns.
-- **Episodes 200-600 (~250k-700k steps)**: rewards rise rapidly from around -110 to around +200. This is the transition from "falling all the time" to "able to move forward." This stage often has large variance: some episodes walk farther, others still fall.
-- **After ~600 episodes (~700k steps and beyond)**: rewards approach a plateau. The moving average stabilizes near 250 to 300. The robot's gait becomes more consistent, but improvement slows down.
+- **First ~300 episodes (~500k steps)**: rewards rise slowly from -110 to around 0. The policy is learning "not to fall" -- the robot transitions from falling every episode to surviving the full 1600 steps. During this stage, PPO is accumulating experience and gradually finding action patterns that maintain balance.
+- **Episodes 300-800 (~500k-1.3M steps)**: rewards rise rapidly from 0 to above 230. The policy transitions from "not falling" to "able to walk." This stage has large variance: some episodes score well (100+), while others still end in a fall (-100).
+- **After ~800 episodes (after ~1.3M steps)**: rewards fluctuate between 200 and 260. The policy has formed a stable gait and enters a refinement phase where most episodes result in stable walking.
 
 One point that matters in continuous control: the reward curve often looks noisier than in discrete tasks. The reason is not that PPO is inherently unstable, but that **small changes in continuous torques can lead to large changes in trajectory**, especially when balance and contact dynamics are involved.
 
@@ -187,9 +187,10 @@ The random policy's mean return is typically around -100 to -50: almost every ep
 One run produced:
 
 ```text
-Random policy mean return: -46.3
-Best episode: -0.2
-Worst episode: -100.0
+Random policy mean return: -103.7
+Standard deviation: 12.6
+Best episode: -77.8
+Worst episode: -124.7
 ```
 
 ## 7.1.4 Replays at Three Training Stages
@@ -205,31 +206,31 @@ python code/chapter07_ppo/render_bipedal_walker.py \
   --episodes 10 --seeds 0 1 2 3 4 5 6 7 8 9
 ```
 
-### Early (100k steps, return -50.8)
+### Early (100k steps, return -35.8)
 
-At 100k steps, the policy has learned almost nothing useful. The robot cannot maintain balance, its limbs swing erratically, and even if it survives for the full 1600 steps it does not move far. The negative return mainly comes from torque penalties and insufficient forward progress.
+At 100k steps, the policy has already learned "not to fall." The robot can survive the full 1600 steps without falling, but it barely moves forward -- its limb movements look like balance-maintaining wiggles in place. The -35.8 return comes from torque penalties and lack of forward progress.
 
-![BipedalWalker at 100k steps: unstable limbs, cannot stand, return -50.8](../../chapter07_ppo/images/bipedalwalker_ep1_100k.gif)
+![BipedalWalker at 100k steps: can stand but cannot walk, return -35.8](../../chapter07_ppo/images/bipedalwalker_ep1_100k.gif)
 
-### Mid (500k steps, return 121.8)
+### Mid (500k steps, return 109.3)
 
-At 500k steps, the policy has learned a basic walking pattern, but the gait is poorly coordinated. The robot can move forward, but with low efficiency and low speed, and it often needs to correct its posture. A return slightly above 100 indicates it is past the "always falling" phase, but still far from efficient walking.
+At 500k steps, the policy is in the transition phase of learning to walk. The same model can produce wildly different results across episodes: lucky episodes score above 100, unlucky ones still end in a fall at -100. The episode shown here is a successful one -- the robot can move forward, but the gait is poorly coordinated and the speed is low.
 
-![BipedalWalker at 500k steps: can walk but unstable, uncoordinated gait, return 121.8](../../chapter07_ppo/images/bipedalwalker_ep2_500k.gif)
+![BipedalWalker at 500k steps: starting to walk but very unstable, return 109.3](../../chapter07_ppo/images/bipedalwalker_ep2_500k.gif)
 
-### Late (2M steps, return 300.2)
+### Late (2M steps, return 295.1)
 
-At 2M steps, the policy has formed a stable, efficient gait. Joint coordination becomes smooth, and the robot often finishes the episode early (for example, in 1096 steps), whereas the 100k and 500k policies commonly run the full 1600 steps without good progress.
+At 2M steps, the policy has formed a stable and efficient gait. Joint coordination is smooth, and the robot finishes the walk in 1118 steps (compared to the full 1600 steps needed by the 100k and 500k policies).
 
-![BipedalWalker at 2M steps: stable and efficient walking, return 296.4](../../chapter07_ppo/images/bipedalwalker_ep3_2m.gif)
+![BipedalWalker at 2M steps: stable and efficient walking, return 295.1](../../chapter07_ppo/images/bipedalwalker_ep3_2m.gif)
 
 Evaluation summary across the three stages (20-episode mean):
 
-| Training Steps | Mean Reward | Std. Dev. | Behavior                         |
-| -------------- | ----------- | --------- | -------------------------------- |
-| 100k           | -63.9       | 25.2      | Uncontrolled limbs, cannot stand |
-| 500k           | 108.5       | 6.8       | Can walk but unstable            |
-| 2M             | 282.5       | 59.7      | Stable, efficient walking        |
+| Training Steps | Mean Reward | Std. Dev. | Behavior                                             |
+| -------------- | ----------- | --------- | ---------------------------------------------------- |
+| 100k           | -34.1       | 3.3       | Can stand but cannot walk; every episode runs 1600 steps |
+| 500k           | -65.2       | 73.1      | Transition: ~15% of episodes walk, the rest still fall   |
+| 2M             | 282.5       | 59.7      | Stable, efficient walking; most episodes score 290+      |
 
 This trajectory is typical for PPO in continuous control: first learn "do not fall" (100k), then learn "walk a little" (500k), and finally form an efficient gait (2M). The process is slower than in discrete control tasks, but the stage boundaries are often clearer because the policy space is much larger in continuous actions, and each phase requires more data to break through.
 
@@ -266,9 +267,9 @@ The key point is that PPO does not need to discretize continuous actions into a 
 
 Training in BipedalWalker often goes through three qualitative stages:
 
-1. **Standing (0-200k steps)**: the policy first learns not to fall. Reward rises slowly from around -100 to around 0, as the robot transitions from "falls immediately" to "barely stays upright."
-2. **Shuffling (200k-600k steps)**: the policy starts taking tentative steps, but the gait is uncoordinated and it still falls frequently. Reward variance is large, and episodes above 100 appear occasionally.
-3. **Walking (after ~600k steps)**: the gait gradually forms and stabilizes. After 2M steps, rewards can stabilize within a relatively narrow band (often around 295-302).
+1. **Standing (0-500k steps)**: the policy first learns not to fall. Reward rises slowly from -110 to around 0, as the robot transitions from "falls immediately" to "can survive the full 1600 steps without falling." But it cannot move forward yet -- only balance in place.
+2. **Shuffling (500k-1M steps)**: the policy starts taking tentative steps, but the gait is very unstable. Some episodes score above 100, while others still end in a fall at -100. The standard deviation reaches 73, reflecting the policy oscillating between "can walk" and "cannot walk."
+3. **Walking (after ~1M steps)**: the gait gradually forms and stabilizes. After 2M steps, most episodes score 290-299, with an occasional fall (about 1-2 out of 20 episodes).
 
 These boundaries are not strict; different random seeds may shift them. But the high-level trend is consistent: learn "do not fall" first, then "take steps," and finally "walk efficiently."
 
@@ -328,7 +329,7 @@ In the next section, we will unpack the mathematical derivation behind PPO: [PPO
 - PPO supports continuous actions natively via a Gaussian policy (output mean and standard deviation, then sample actions), without discretization.
 - BipedalWalker learning often goes through three stages: "standing → shuffling → walking," and typically requires far more training steps than common discrete-action tasks.
 - This section uses SB3's PPO implementation. The entry script is `code/chapter07_ppo/ppo_bipedal_walker.py`, and the replay GIFs are generated by `render_bipedal_walker.py`.
-- The environment's solved threshold is a 100-episode mean reward $\geq 300$. In this section, 2M-step training reaches 296.03 ± 1.65, very close to the solved threshold.
+- The environment's solved threshold is a 100-episode mean reward $\geq 300$. In this section, 2M-step training reaches 282.5 ± 59.7, with most episodes stable in the 290-299 range.
 
 ## References
 
