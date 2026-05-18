@@ -1,5 +1,6 @@
 <div align="center">
   <img src="docs/public/readme/readmelogo.png" alt="Hands-On Modern RL" width="500" />
+  <p><em>现代强化学习实战指南：涵盖经典控制、LLM 后训练、RLVR 与多模态智能体。</em></p>
 
   <p>
     <a href="https://walkinglabs.github.io/hands-on-modern-rl/"><img src="https://img.shields.io/badge/Course-Online-2563eb?style=flat-square" alt="Online Course" /></a>
