@@ -54,12 +54,12 @@ The spirit is the same as R1-Zero: rewards come from objective answer verificati
 
 The pedagogical value of this case is that it decomposes "is pure RL feasible?" into concrete questions:
 
-| Question                                                | What SimpleRL-Zoo reveals                                                     |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Does the base model choice matter?                      | Different families have very different zero-RL starting points and ceilings.   |
-| Is more data always better?                             | Small amounts of high-quality, verifiable math data still produce clear signal.|
-| Does longer chain-of-thought mean stronger reasoning?   | Response length, accuracy, and self-verification must be examined separately.  |
-| Is a "simple recipe" really simple?                     | The reward is simple, but distributed sampling and length control are not.     |
+| Question                                              | What SimpleRL-Zoo reveals                                                       |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Does the base model choice matter?                    | Different families have very different zero-RL starting points and ceilings.    |
+| Is more data always better?                           | Small amounts of high-quality, verifiable math data still produce clear signal. |
+| Does longer chain-of-thought mean stronger reasoning? | Response length, accuracy, and self-verification must be examined separately.   |
+| Is a "simple recipe" really simple?                   | The reward is simple, but distributed sampling and length control are not.      |
 
 SimpleRL-reason is best understood as an open-source reference experiment for R1-Zero, not a separate contribution. It confirms that zero RL is not just a slogan and not exclusive to closed-source systems. As long as the base model has latent ability and the task provides stable verifiable rewards, RL can organize those abilities into more reliable strategies.
 
@@ -83,12 +83,12 @@ GRPO proved that RL can work without a Critic, but it still has engineering pain
 
 ### DAPO's Four Improvements
 
-| Improvement                 | GRPO's problem                                                                          | DAPO's solution                                                             | Effect                          |
-| --------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------- |
-| **Clip-Higher**             | Symmetric upper/lower clipping over-suppresses low-probability actions.                 | Decouple clipping ranges and give low-probability actions more upward room. | Better exploration              |
-| **Dynamic sampling**        | All prompts participate in training, wasting compute on solved problems.                 | Filter out prompts the model already solves.                                | 2–3x better training efficiency |
-| **Token-level loss**        | Sequence-level reward normalization ignores differences between tokens.                 | Token-level policy gradients for finer credit assignment.                   | Better long-sequence training   |
-| **Overlong Reward Shaping** | Overlong answers are truncated and penalized, producing discontinuous gradients.         | Smooth length penalty function.                                             | More stable training            |
+| Improvement                 | GRPO's problem                                                                   | DAPO's solution                                                             | Effect                          |
+| --------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------- |
+| **Clip-Higher**             | Symmetric upper/lower clipping over-suppresses low-probability actions.          | Decouple clipping ranges and give low-probability actions more upward room. | Better exploration              |
+| **Dynamic sampling**        | All prompts participate in training, wasting compute on solved problems.         | Filter out prompts the model already solves.                                | 2–3x better training efficiency |
+| **Token-level loss**        | Sequence-level reward normalization ignores differences between tokens.          | Token-level policy gradients for finer credit assignment.                   | Better long-sequence training   |
+| **Overlong Reward Shaping** | Overlong answers are truncated and penalized, producing discontinuous gradients. | Smooth length penalty function.                                             | More stable training            |
 
 **Clip-Higher.** GRPO clips the policy ratio symmetrically, for example to $[0.8, 1.2]$. This is fine for high-probability actions that the model already prefers. But for a promising action whose current probability is only 0.01, the lower bound of 0.8 lets it be pushed down to 0.008—almost completely suppressed. DAPO decouples the upper and lower clipping ranges, giving low-probability actions more room to grow.
 
