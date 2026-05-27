@@ -584,6 +584,64 @@ ICML 2025 收录的 **Agent-as-a-Judge** [^agent-judge] 进一步推进了这个
 
 **APIGen-MT** [^apigen]（NeurIPS 2025）采用**模拟 Agent-人类交互**的方式生成多轮对话任务。先用一个 LLM 委员会生成任务蓝图，再模拟用户逐步透露信息、Agent 做出响应的交互过程。生成的模型（xLAM-2-fc-r）在 τ-bench 上超过了 GPT-4o。
 
+**HardGen** [^hardgen]：从失败案例反向合成困难样本。整个 pipeline 分三步：
+
+1. **构建 API Graph。** 让基线模型在工具环境中大量试跑，收集所有失败 case。从中抽取 API 调用及其依赖关系，构建一张动态的 API Graph——节点是工具/API，边是调用之间的隐式逻辑依赖（比如"必须先调用 `get_user_info` 拿到 user_id，才能调用 `query_order`"）。这张图编码了 Agent 容易在哪些调用链上犯错。
+2. **采样并实例化。** 从 API Graph 上采样多条复杂调用链作为"困难 trace"。这些 trace 是抽象的——只规定了调用顺序和依赖关系，不涉及具体参数。然后用 LLM 将 trace 实例化：为每个 API 填写具体参数，为整条链生成用户查询。实例化时会故意引入高级工具（比如需要嵌套调用、需要处理异常返回值），让任务更加困难。
+3. **生成 CoT 并闭环验证。** 用 LLM 根据查询和工具定义生成 Chain-of-Thought 推理过程，作为训练数据的"标准答案"。生成后把查询放回环境中实际执行，验证推理过程是否能得出正确结果。如果不通过，回炉重新生成。这个闭环保证了每条数据的可验证性。
+
+HardGen 的核心洞察是：简单任务靠随机采样就能覆盖，但困难任务的结构必须从真实的失败模式中提取。用这个方法训练的 4B 模型在工具调用评测上超越了 GPT-5.2 和 Claude Opus 4.5。
+
+**Evol-Instruct** [^evol-instruct]（WizardLM 系列）：对种子指令做进化操作，逐步提升复杂度。具体做法是定义一组**进化算子**，每个算子从不同维度把指令变难：
+
+- **深化（In-depth）**：增加推理深度。比如把"列出北京市的人口"变成"比较北京、上海、广州近十年的人口变化趋势，分析导致差异的三个关键因素"。
+- **拓宽（In-breadth）**：扩展到新的主题或场景，保持同等难度，增加覆盖面。
+- **加约束（Constrained）**：给原始指令追加限制条件。比如"写一个排序算法"变成"写一个排序算法，要求时间复杂度不超过 O(n log n)，空间复杂度为 O(1)，且保持稳定性"。
+- **简化（Simplified）**：反过来，把冗长复杂的指令浓缩成简洁版本，锻炼模型理解简短但信息密度高的指令。
+
+实际操作时，用 LLM 执行进化：把种子指令和进化算子的描述一起输入 LLM，让它输出进化后的指令。每次进化后做一轮过滤——用另一个 LLM 或规则检查新指令是否合理（没有歧义、没有事实错误、确实是变难了而不是变简单了），不通过的丢弃。多轮进化可以叠加：一个简单指令经过"加约束 → 深化 → 再加约束"变成高难度指令。
+
+WizardMath 把进化算子专门适配到数学领域（增加步骤数、引入子问题、添加验证条件），WizardCoder 适配到代码领域（增加边界条件、引入多文件依赖、要求处理异常）。**Tag-Evol** [^tag-evol] 进一步改进：在进化时注入结构化标签（比如 `[domain: finance]`、`[difficulty: hard]`、`[skill: multi-step-reasoning]`），让进化方向更可控。
+
+**AgentTrek** [^agenttrek]（ICLR 2025 Spotlight）：从 Web 教程中合成 Agent 轨迹。核心思路是互联网上有大量"手把手教程"（比如"如何在淘宝设置满减活动"、"如何在 Figma 中创建组件变体"），这些教程天然包含了**正确的操作序列**。AgentTrek 的 pipeline：
+
+1. **教程收集与解析。** 从互联网上收集 Web 操作教程，用 LLM 解析教程内容，提取出结构化的操作步骤：每步要访问哪个页面、点击什么按钮、填写什么内容、预期看到什么结果。
+2. **轨迹回放（Guided Replay）。** 把解析出的操作步骤转化为 Agent 可以执行的格式（URL、动作、参数），让 Agent 在真实或模拟的 Web 环境中回放这些操作。回放过程中记录完整的交互轨迹——包括 Agent 的思考过程（CoT）、每一步的工具调用、环境的返回结果。
+3. **轨迹过滤与质量提升。** 回放可能失败（页面结构变了、教程过时了）。AgentTrek 用 LLM Judge 检查轨迹质量：操作序列是否与教程一致、是否成功完成了目标。不通过的丢弃。通过的轨迹进一步用 LLM 做改写和增强，比如补充推理过程、增加异常处理的示范。
+
+这种方法的优势在于数据质量高——每条轨迹都有"人类教程"作为正确性的锚点，不像纯合成数据那样容易出现"看似合理实则错误"的问题。
+
+**Firefly** [^firefly]：直接从真实 API 生成可验证的工具调用数据。它解决了合成数据的一个关键痛点：**模拟 API 和真实 API 的行为差异**。很多合成方法用 LLM 模拟 API 返回值，但模拟行为可能和真实行为不一致——参数格式要求不同、边界条件不同、错误码不同。模型在模拟数据上训练后，部署到真实环境会失效。Firefly 的做法是：
+
+1. **收集真实 API Schema。** 从 RapidAPI 等平台上收集大量公开 API 的文档（参数定义、返回格式、认证方式），构建 API 知识库。
+2. **生成查询-调用对。** 用 LLM 根据 API Schema 生成用户查询和对应的工具调用计划。关键点是调用参数必须符合真实 API 的约束——参数类型、必填字段、取值范围都要严格匹配 Schema。
+3. **真实执行并验证。** 把生成的工具调用发送到真实的 API 端点执行，记录真实的返回结果。如果 API 返回错误（参数不对、认证失败、超时），就把这条数据丢弃或重新生成。只有成功执行的调用才会被保留。
+4. **构建 CoT 训练数据。** 用成功的调用记录反推 Chain-of-Thought：为什么选这个 API、为什么填这些参数、返回结果意味着什么。
+
+这个"真实执行 + 验证"的闭环保证了数据的有效性。缺点是成本较高（真实 API 有调用限额和费用），且速度受限于 API 的响应时间。
+
+**WebShaper** [^webshaper]（通义 DeepResearch 团队）：用信息寻求的形式化框架指导数据合成。它主要解决的是 Deep Research 类 Agent 的评测数据构建问题。pipeline 如下：
+
+1. **信息寻求形式化（ISF）。** 将一个研究问题分解为结构化的信息寻求图（Information-Seeking Graph）：图的节点是需要查找的事实片段，边是事实之间的依赖关系（比如要回答"A 公司营收增长的原因"，需要先查到"A 公司的营收数据"和"行业平均增速"）。
+2. **Wikipedia 离线化。** 把海量 Wikipedia 文章转化为静态的离线搜索环境——每篇文章是一个可被搜索和检索的文档，搜索结果完全确定，不受真实搜索引擎排序变化的影响。这保证了 RL 训练中的 MDP 稳定性。
+3. **查询-轨迹合成。** 根据 ISF 图，自动生成研究查询和对应的多步搜索轨迹。每条轨迹包含：搜索关键词选择、文档检索、信息提取、综合推理。轨迹的"标准答案"直接从 Wikipedia 内容中提取，天然可验证。
+
+WebShaper 的核心贡献是把"什么信息需要被检索"这个问题从隐式变成显式——ISF 图明确规定了每个查询需要找到哪些信息片段、信息之间如何关联，这让合成数据的可控性和可验证性大幅提升。
+
+这些方法可以按"数据从哪来"分成几类：
+
+| 方法 | 数据来源 | 核心思路 | 适用场景 |
+|------|---------|---------|---------|
+| TaskCraft | 原子任务模板 | 深度 + 宽度组合扩展 | 通用多工具任务 |
+| APIGen-MT | LLM 委员会蓝图 | 模拟 Agent-人类交互 | 多轮对话任务 |
+| HardGen | Agent 失败 case | 失败模式 → API Graph → 困难 trace | 补充困难边界样本 |
+| Evol-Instruct | 种子指令 | 进化操作（深化/拓宽/加约束） | 系统性提升复杂度 |
+| AgentTrek | Web 操作教程 | 教程解析 → 轨迹回放 | Web Agent 训练数据 |
+| Firefly | 真实 API | 真实执行 + 验证闭环 | 工具调用数据 |
+| WebShaper | Wikipedia + ISF | 信息寻求形式化 + 离线环境 | Deep Research Agent |
+
+实践中，这些方法往往是**互补**的。举一个实际的组合场景：你要构建一个"数据分析 Agent"的评测集。先用 **TaskCraft** 生成一批基础的单工具查询任务（简单题），再用 **Evol-Instruct** 的加约束算子把简单题变难（加时间范围、加对比维度、加异常值过滤），然后用 **HardGen** 收集模型在这些任务上的失败模式，反向合成更难的边界 case。如果涉及 Web 操作（比如从数据平台下载数据），用 **AgentTrek** 从操作教程合成轨迹作为参考答案。最后用 **WebShaper** 的思路构建一个离线数据环境，确保评测的确定性。
+
 #### 开放式任务怎么评？
 
 上面的方法大多适用于有标准答案的任务。但很多 Agent 任务是开放式的——写一份报告、做一次调研、给一段建议。这些任务没有唯一的正确答案。
@@ -955,7 +1013,7 @@ FRONTEND_HACKING_RULES = [
 
 1. **定义任务分布。** 确定评测集需要覆盖的任务类型和难度范围。以"财务分析 Agent"为例，任务可能包括：单一指标查询（简单）、跨年度趋势分析（中等）、多公司对比报告（困难）。每种难度各占一定比例。
 
-2. **构造任务。** 简单任务可以用 TaskCraft 式的自动化方法生成。复杂任务从真实用户需求中提取。每个任务标注验证类型：有确定答案的用精确匹配，可执行的用沙箱验证，开放式的用 JADE 式的动态 Rubric。
+2. **构造任务。** 简单任务可以用 TaskCraft 式的自动化方法生成，中等难度任务用 Evol-Instruct 的进化操作逐步提升复杂度，困难任务用 HardGen 从失败 case 中反向合成。复杂任务也可以从真实用户需求中提取。每个任务标注验证类型：有确定答案的用精确匹配，可执行的用沙箱验证，开放式的用 JADE 式的动态 Rubric。
 
 3. **去污染。** 确保评测集中的任务没有出现在训练数据中。可以用 n-gram 重叠或语义相似度检测泄露。这一步和[附录 B 的去污染方法](/appendix_industrial_training/evaluation-badcase)一致。
 
@@ -1140,6 +1198,18 @@ $$
 [^tau-bench]: Yao S, Shinn N, Razavi P, Narasimhan K. "[τ-bench: A Benchmark for Tool-Agent-User Interaction](https://arxiv.org/abs/2406.12045)." 2024. —— 三阶段构建方法：手动 schema → LLM 数据生成 → 人工场景编写。
 
 [^taskcraft]: TaskCraft Team. "[TaskCraft: Automated Generation of Agentic Tasks](https://arxiv.org/abs/2506.10055)." ICLR 2026. —— 原子任务 + 深度/宽度扩展，自动生成 41K 多工具任务。
+
+[^hardgen]: Hao B, et al. "[From Failure to Mastery: Generating Hard Samples for Tool-use Agents](https://arxiv.org/abs/2601.01498)." 2026. —— 从失败 case 构建 API Graph，反向采样合成困难样本，4B 模型超越 GPT-5.2 和 Claude Opus 4.5。
+
+[^evol-instruct]: Xu C, et al. "[WizardLM: Empowering Large Language Models to Follow Complex Instructions](https://arxiv.org/abs/2304.12244)." ICLR 2024. —— Evol-Instruct 通过深化、拓宽、加约束等进化操作提升指令复杂度。
+
+[^tag-evol]: Tag-Evol Team. "[Tag-Evol: Achieving Efficient Instruction Evolving via Tag Injection](https://arxiv.org/abs/2505.24165)." 2025. —— 在进化时注入结构化标签（领域、难度、技能）来控制进化方向。
+
+[^agenttrek]: AgentTrek Team. "[AgentTrek: Agent Trajectory Synthesis via Guiding Replay with Web Tutorials](https://arxiv.org/abs/2412.09605)." ICLR 2025 Spotlight. —— 从 Web 教程提取操作流，回放合成 Agent 交互轨迹。
+
+[^firefly]: Lu Y, et al. "[Firefly: Illuminating Large-Scale Verified Tool-Call Data Generation from Real APIs](https://arxiv.org/abs/2605.17558)." 2026. —— 从真实 API 大规模生成可验证的工具调用数据。
+
+[^webshaper]: Tao Z, et al. "[WebShaper: Agentically Data Synthesizing via Information-Seeking Formalization](https://arxiv.org/abs/2507.15061)." 2025. —— 信息寻求形式化指导数据合成，构建离线搜索环境。
 
 [^apigen]: APIGen-MT Team. "[Agentic Pipeline for Multi-Turn Data Generation](https://openreview.net/forum?id=qk6ORqQ4Cu)." NeurIPS 2025. —— 模拟 Agent-人类交互生成多轮对话任务。
 
