@@ -214,7 +214,7 @@ flowchart TD
         Input["输入: action_type + action_args"]
         Route{"action_type 是什么?"}
         Input --> Route
-        Route -->|execute_code| Exec["_exec_code(code)")
+        Route -->|execute_code| Exec["_exec_code(code)"]
         Route -->|finish| Done["返回 done=True"]
         Route -->|其他| Err["返回 Unknown action"]
         Exec --> Write["写入临时文件 .py"]
