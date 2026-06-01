@@ -395,9 +395,8 @@ npm run verify        # 运行格式检查、Lint、构建和产物验证
 
 我们的团队还制作了其他课程！请查看：
 
-[![LEARN HARNESS ENGINEERING](https://img.shields.io/badge/LEARN_HARNESS_ENGINEERING-0052cc?style=for-the-badge)](https://github.com/walkinglabs/learn-harness-engineering)
-
-[![MODERN LLM NOTEBOOK](https://img.shields.io/badge/MODERN_LLM_NOTEBOOK-0052cc?style=for-the-badge)](https://github.com/walkinglabs/modern-llm-notebook)
+- [**Learn Harness Engineering**](https://github.com/walkinglabs/learn-harness-engineering) — 面向 AI 编程智能体的 Harness Engineering 课程。通过 12 节讲座和 6 个实战项目，教你构建指令、状态管理、验证与控制机制，让模型输出真正可靠。
+- [**Modern LLM Notebook**](https://github.com/walkinglabs/modern-llm-notebook) — 通过 23 个可运行的 Jupyter Notebook，从零用 PyTorch 实现现代 LLM 核心组件，涵盖 Tokenizer、Transformer、训练、推理、对齐与前沿主题。
 
 ## 读者交流群（微信）
 

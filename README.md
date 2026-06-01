@@ -395,9 +395,8 @@ For repository-specific maintenance rules, see [`AGENTS.md`](AGENTS.md).
 
 Our team has also created other courses. Take a look:
 
-[![LEARN HARNESS ENGINEERING](https://img.shields.io/badge/LEARN_HARNESS_ENGINEERING-0052cc?style=for-the-badge)](https://github.com/walkinglabs/learn-harness-engineering)
-
-[![MODERN LLM NOTEBOOK](https://img.shields.io/badge/MODERN_LLM_NOTEBOOK-0052cc?style=for-the-badge)](https://github.com/walkinglabs/modern-llm-notebook)
+- [**Learn Harness Engineering**](https://github.com/walkinglabs/learn-harness-engineering) — A course on environment engineering for AI coding agents. Through 12 lectures and 6 projects, it teaches you to build instructions, state management, verification, and control mechanisms that make model output reliable.
+- [**Modern LLM Notebook**](https://github.com/walkinglabs/modern-llm-notebook) — Build modern LLMs from scratch through 23 runnable Jupyter Notebooks in PyTorch, covering Tokenizer, Transformer, training, inference, alignment, and frontier topics.
 
 ## Discussion Group (WeChat)
 
