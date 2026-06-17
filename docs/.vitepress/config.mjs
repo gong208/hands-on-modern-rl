@@ -199,7 +199,7 @@ function renderSearchMarkdown(src) {
 function isValidMathDelimiter(state, pos) {
   const max = state.posMax
   const prevChar = pos > 0 ? state.src.charCodeAt(pos - 1) : -1
-  const nextChar = pos + 1 <= max ? state.src.charCodeAt(pos + 1) : -1
+  const nextChar = pos + 1 < max ? state.src.charCodeAt(pos + 1) : -1
 
   return {
     canOpen: nextChar !== 0x20 && nextChar !== 0x09,
