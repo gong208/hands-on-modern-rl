@@ -227,6 +227,27 @@ function isValidMathDelimiter(state, pos) {
 function mathInline(state, silent) {
   if (state.src[state.pos] !== '$') return false
 
+  // Display math inline: $$...$$ inside a paragraph/list/blockquote line.
+  // Must be tried before the single-$ branch so the closing $$ isn't read as
+  // two consecutive empty inline-math delimiters.
+  if (
+    state.pos + 1 < state.posMax &&
+    state.src[state.pos + 1] === '$'
+  ) {
+    const start = state.pos + 2
+    const close = state.src.indexOf('$$', start)
+    if (close !== -1 && close < state.posMax) {
+      if (!silent) {
+        const token = state.push('math_inline', 'math', 0)
+        token.markup = '$$'
+        token.content = state.src.slice(start, close)
+        token.displayMode = true
+      }
+      state.pos = close + 2
+      return true
+    }
+  }
+
   let delimiter = isValidMathDelimiter(state, state.pos)
   if (!delimiter.canOpen) {
     if (!silent) state.pending += '$'
@@ -449,11 +470,11 @@ function rescueMathInInline(md) {
 
 function katexMarkdown(md) {
   md.inline.ruler.push('math_inline', mathInline)
-  md.block.ruler.push('math_block', mathBlock, {
+  md.block.ruler.after('blockquote', 'math_block', mathBlock, {
     alt: ['paragraph', 'reference', 'blockquote', 'list']
   })
   md.renderer.rules.math_inline = (tokens, idx) =>
-    renderKatex(tokens[idx].content, false)
+    renderKatex(tokens[idx].content, tokens[idx].displayMode || false)
   md.renderer.rules.math_block = (tokens, idx) =>
     `<p>${renderKatex(tokens[idx].content, true)}</p>\n`
 }
