@@ -12,7 +12,7 @@ In post-training interviews, DPO loss is the single most frequently requested �
 
 ### One-Line Memory
 
-> "Chosen log-prob minus rejected log-prob, then subtract the same difference from the reference model." Four log-probs, two subtractions, then another subtraction.
+> Push good answers up, push bad answers down — both compared against the reference model.
 
 $$\mathcal{L}_{DPO} = -\mathbb{E}\Big[\log\sigma\Big(\beta\big(\log\frac{\pi_\theta(y_w|x)}{\pi_{ref}(y_w|x)} - \log\frac{\pi_\theta(y_l|x)}{\pi_{ref}(y_l|x)}\big)\Big)\Big]$$
 
@@ -29,14 +29,17 @@ $$\mathcal{L}_{DPO} = -\mathbb{E}\Big[\log\sigma\Big(\beta\big(\log\frac{\pi_\th
 ### Pseudocode
 
 ```
-pi_chosen   = log_pi_theta(y_w | x)
-pi_rejected = log_pi_theta(y_l | x)
-ref_chosen  = log_pi_ref(y_w | x)
-ref_rejected = log_pi_ref(y_l | x)
+# Step 1: grab 4 log-probs — two models x two answers
+pi_chosen   = log_pi_theta(y_w | x)        # current model on the good answer
+pi_rejected = log_pi_theta(y_l | x)        # current model on the bad answer
+ref_chosen  = log_pi_ref(y_w | x)          # reference model on the good answer
+ref_rejected = log_pi_ref(y_l | x)         # reference model on the bad answer
 
-log_ratio_w = pi_chosen   - ref_chosen     # policy vs reference on chosen
-log_ratio_l = pi_rejected - ref_rejected   # policy vs reference on rejected
+# Step 2: for each answer compute the "current vs reference" log ratio
+log_ratio_w = pi_chosen  - ref_chosen      # good answer: how much higher is current vs ref
+log_ratio_l = pi_rejected - ref_rejected   # bad answer: how much higher is current vs ref
 
+# Step 3: want the good ratio to beat the bad ratio; pass through sigmoid and take negative log
 loss = -log_sigmoid(beta * (log_ratio_w - log_ratio_l))
 ```
 
@@ -122,7 +125,7 @@ def dpo_loss(
 
 ### One-Line Memory
 
-> Replace the sigmoid objective with squared error: $(\beta \cdot \Delta - 0.5)^2$.
+> Swap DPO's sigmoid for a squared difference: the good-minus-bad gap should approach a fixed value.
 
 IPO does not use log-sigmoid; it directly regresses to a margin around 0.5.
 

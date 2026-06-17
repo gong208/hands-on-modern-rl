@@ -8,15 +8,21 @@ PPO 是大模型 RL 面试中考查频率最高的算法。面试官通常会要
 
 ### 一句话记忆
 
-> **从后往前扫：$\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$，其中 $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$。**
+> **从最后一步往回扫：当下奖励叠加未来的优势。**
 
 GAE 是 PPO 的前置知识，面试常单独问。
 
 ### 伪代码
 
 ```
+# 第 1 步：算 TD 误差 δ_t
+#   = 当前奖励 + 折扣后的下一步估值 - 当前估值
 delta_t = reward_t + gamma * value_{t+1} * (1 - done_t) - value_t
+
+# 第 2 步：从后往前叠 —— 这一步的 δ 加上折扣后的"未来优势"
 advantage_t = delta_t + gamma * lambda * (1 - done_t) * advantage_{t+1}
+
+# 第 3 步：return = advantage + 当前估值（给 critic 学）
 return_t = advantage_t + value_t
 ```
 
@@ -84,16 +90,21 @@ def compute_gae(rewards, values, dones, gamma=0.99, lam=0.95):
 
 ### 一句话记忆
 
-> **ratio 和 advantage 乘，clip 把 ratio 限在 $[1-\epsilon, 1+\epsilon]$，取两者较小值。**
+> **新策略 ÷ 旧策略 = 比值；比值 × 优势 = 目标；比值超范围就截断，取小的那个。**
 
 $$L^{CLIP} = -\min\big(r_t(\theta) \cdot A_t,\;\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \cdot A_t\big)$$
 
 ### 伪代码
 
 ```
+# 第 1 步：算新旧策略的比值（用 log 相减再 exp，数值更稳）
 ratio = exp(new_log_prob - old_log_prob)
+
+# 第 2 步：算两个 surrogate —— 一个不截断，一个截断
 surr1 = ratio * advantage
 surr2 = clip(ratio, 1-eps, 1+eps) * advantage
+
+# 第 3 步：取较小的（更保守），加负号变最小化
 loss = -min(surr1, surr2).mean()
 ```
 
@@ -148,16 +159,21 @@ def ppo_policy_loss(new_logps, old_logps, advantages, clip_eps=0.2):
 
 ### 一句话记忆
 
-> **MSE(V, returns)，可选 clip：预测值不要离旧预测太远。**
+> **猜的值离目标多远，平方一下取平均；可选：预测别离旧预测太远。**
 
 ### 伪代码
 
 ```
+# 第 1 步：critic 给出当前预测
 value_pred = critic(state)
+
+# 第 2 步：把预测的变化幅度截断，得到一个"保守版"预测
 value_clipped = old_values + clip(value_pred - old_values, -eps, eps)
+
+# 第 3 步：两个版本都算 MSE，取较大的（更保守）
 loss1 = (value_pred - returns)^2
 loss2 = (value_clipped - returns)^2
-loss = max(loss1, loss2).mean()       # 取较大值 = 更保守
+loss = max(loss1, loss2).mean()
 ```
 
 ### PyTorch 实现

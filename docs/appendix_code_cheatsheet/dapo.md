@@ -18,19 +18,21 @@ DAPO（Decoupled Clip and Dynamic Sampling Policy Optimization）是 2025 年字
 
 ### 一句话记忆
 
-> **正 advantage 只裁上界（不贪心），负 advantage 只裁下界（不报复）。GRPO 两边都裁，DAPO 只裁一边。**
+> **好的不贪心、坏的不报复：正优势只裁上界，负优势只裁下界。**
 
 ### 伪代码
 
 ```
+# 第 1 步：算新旧策略的比值
 ratio = exp(new_logp - old_logp)
 
-# 正 advantage: 鼓励变好，但不要太贪 → 只裁上界
+# 第 2 步：正 advantage —— 只裁上界（不让 ratio 飙太高）
 pos_surr = min(ratio, 1 + eps) * advantage    # advantage > 0
 
-# 负 advantage: 允许回弹，不要过度惩罚 → 只裁下界
+# 第 3 步：负 advantage —— 只裁下界（允许 ratio 回弹）
 neg_surr = max(ratio, 1 - eps) * advantage    # advantage < 0
 
+# 第 4 步：合并取平均
 loss = -mean(pos_surr + neg_surr)
 ```
 
@@ -124,15 +126,19 @@ def dapo_policy_loss(new_logps, old_logps, advantages,
 
 ### 一句话记忆
 
-> **如果同一个 prompt 的 G 条回答 reward 全一样（全对或全错），这个 prompt 不参与训练——没有区分度。**
+> **一组答案全对或全错 → 没区分度 → 跳过这个题。**
 
 ### 伪代码
 
 ```
+# 遍历每个题（prompt）
 for each prompt:
+    # 题下采的 G 条回答都打分
     rewards = [get_reward(completion) for completion in group]
+
+    # 全部分数一样（全对或全错）→ 没区分度，跳过
     if all rewards are the same:
-        skip this prompt  # 无区分度，训练信号为 0
+        skip this prompt
 ```
 
 ### PyTorch 实现
@@ -157,13 +163,16 @@ GRPO 的 advantage 是组内 z-score 归一化。如果全组 reward 一样，st
 
 ### 一句话记忆
 
-> **超长不是一刀切扣到 0，而是按超出比例线性扣分。**
+> **回答超长不全扣光，按超出多少慢慢扣。**
 
 ### 伪代码
 
 ```
+# 第 1 步：超过最大长度才扣分
 if response_length > max_length:
+    # 第 2 步：超得越多扣得越多（按超出比例）
     penalty_ratio = (response_length - max_length) / max_length
+    # 第 3 步：从原 reward 里减掉
     reward = reward - penalty_weight * penalty_ratio
 ```
 

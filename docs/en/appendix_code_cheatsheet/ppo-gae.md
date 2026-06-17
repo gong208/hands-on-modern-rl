@@ -12,15 +12,21 @@ PPO is one of the most frequently tested algorithms in LLM RL interviews. Interv
 
 ### One-Line Memory
 
-> Sweep backward: $\hat{A}_t = \delta_t + \gamma\lambda \hat{A}_{t+1}$, where $\delta_t = r_t + \gamma V(s_{t+1}) - V(s_t)$.
+> Sweep backward from the last step: today's reward plus the discounted future advantage.
 
 GAE is prerequisite knowledge for PPO, and is often asked on its own.
 
 ### Pseudocode
 
 ```
+# Step 1: compute the TD error delta_t
+#   = current reward + discounted next-step value estimate - current value estimate
 delta_t = reward_t + gamma * value_{t+1} * (1 - done_t) - value_t
+
+# Step 2: sweep backward — add this step's delta plus the discounted "future advantage"
 advantage_t = delta_t + gamma * lambda * (1 - done_t) * advantage_{t+1}
+
+# Step 3: return = advantage + current value estimate (this trains the critic)
 return_t = advantage_t + value_t
 ```
 
@@ -89,16 +95,21 @@ def compute_gae(rewards, values, dones, gamma=0.99, lam=0.95):
 
 ### One-Line Memory
 
-> Multiply `ratio` by `advantage`. Clip `ratio` to $[1-\epsilon, 1+\epsilon]$. Take the more conservative of the two (the minimum).
+> New policy / old policy = ratio. Ratio * advantage = target. If the ratio leaves the allowed band, clip it; take the smaller target.
 
 $$L^{CLIP} = -\min\big(r_t(\theta) \cdot A_t,\;\text{clip}(r_t(\theta), 1-\epsilon, 1+\epsilon) \cdot A_t\big)$$
 
 ### Pseudocode
 
 ```
+# Step 1: compute the new/old policy ratio (subtract logs then exp — more numerically stable)
 ratio = exp(new_log_prob - old_log_prob)
+
+# Step 2: build two surrogates — one unclipped, one clipped to the band
 surr1 = ratio * advantage
 surr2 = clip(ratio, 1-eps, 1+eps) * advantage
+
+# Step 3: take the smaller (more conservative) one, negate it to minimize
 loss = -min(surr1, surr2).mean()
 ```
 
@@ -153,16 +164,21 @@ def ppo_policy_loss(new_logps, old_logps, advantages, clip_eps=0.2):
 
 ### One-Line Memory
 
-> MSE between $V$ and `returns`. Optional clipping: keep the new value prediction close to the old one.
+> How far the guess is from the target: square it, then average. Optional: don't let the new prediction stray too far from the old one.
 
 ### Pseudocode
 
 ```
+# Step 1: critic produces a fresh prediction
 value_pred = critic(state)
+
+# Step 2: clip how far the prediction can move; this gives a "conservative" version
 value_clipped = old_values + clip(value_pred - old_values, -eps, eps)
+
+# Step 3: compute MSE for both versions and take the larger one (more conservative)
 loss1 = (value_pred - returns)^2
 loss2 = (value_clipped - returns)^2
-loss = max(loss1, loss2).mean()    # take the larger one = more conservative
+loss = max(loss1, loss2).mean()
 ```
 
 ### PyTorch Implementation

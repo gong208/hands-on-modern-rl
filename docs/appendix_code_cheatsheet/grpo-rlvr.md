@@ -6,30 +6,30 @@
 
 ### 一句话记忆
 
-> **同 prompt 采 G 条回答，reward 在组内做 z-score 归一化当 advantage，然后套 PPO 的 clipped loss，再加 KL 惩罚。没有 Critic。**
+> **同一题采一群答案，组内比个高低当优势；其余照抄 PPO，砍掉 Critic。**
 
 ### 伪代码
 
 ```
-# 1. 同一 prompt 采样 G 条 completion
+# 第 1 步：同一题让模型生成 G 个回答
 completions = [generate(prompt) for _ in range(G)]
 
-# 2. 对每条打分
+# 第 2 步：给每个回答打分
 rewards = [reward_fn(c) for c in completions]   # [G]
 
-# 3. 组内归一化 → advantage
-advantages = (rewards - mean(rewards)) / (std(rewards) + eps)  # [G]
+# 第 3 步：组内归一化（减均值除标准差）→ 当作 advantage
+advantages = (rewards - mean(rewards)) / (std(rewards) + eps)
 
-# 4. PPO clipped loss（用组内 advantage）
+# 第 4 步：套 PPO clipped loss（advantage 来自第 3 步，不是 Critic）
 ratio = exp(new_logp - old_logp)
 surr1 = ratio * advantages
 surr2 = clip(ratio, 1-eps, 1+eps) * advantages
 policy_loss = -min(surr1, surr2).mean()
 
-# 5. KL 惩罚（相对 reference model）
+# 第 5 步：加 KL 惩罚（拉住，别离参考模型太远）
 kl = kl_penalty(log_probs, ref_log_probs)
 
-# 6. 总 loss
+# 第 6 步：总 loss
 loss = policy_loss + kl_coeff * kl
 ```
 
@@ -116,14 +116,16 @@ def grpo_loss(log_probs, old_log_probs, ref_log_probs,
 
 ### 一句话记忆
 
-> **chosen 分数比 rejected 高 $\Rightarrow$ sigmoid 后接近 1 $\Rightarrow$ -log 接近 0。就一行：`-log_sigmoid(r_chosen - r_rejected)`。**
+> **让奖励模型给好回答打分比坏回答高。一行：`-log_sigmoid(r_chosen - r_rejected)`。**
 
 ### 伪代码
 
 ```
-r_w = reward_model(chosen_input)     # chosen 的 reward 标量
-r_l = reward_model(rejected_input)   # rejected 的 reward 标量
+# 第 1 步：奖励模型给两个回答各打一个分
+r_w = reward_model(chosen_input)     # 好回答的分数
+r_l = reward_model(rejected_input)   # 坏回答的分数
 
+# 第 2 步：希望好分数比坏分数高，过 sigmoid 取负对数
 loss = -log(sigmoid(r_w - r_l))
 ```
 

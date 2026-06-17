@@ -4,15 +4,21 @@
 
 ### 一句话记忆
 
-> **input 右移一位当 target，只在 answer 部分（`label != -100`）算交叉熵。**
+> **看前一个词，猜下一个词。提问不算分，只算回答。**
 
 ### 伪代码
 
 ```
-logits = model(input_ids)          # [B, seq_len, vocab_size]
-shift_logits = logits[:, :-1, :]   # 去掉最后一个位置的预测
-shift_labels = input_ids[:, 1:]    # 去掉第一个 token
+# 第 1 步：模型读完整句，每个位置都给出"下一个词"的预测分布
+logits = model(input_ids)
 
+# 第 2 步：错位对齐——位置 t 的预测 ↔ 位置 t+1 的真实词
+#   砍掉 logits 最后一位：句末没有"下一个"了
+#   砍掉 labels 第一位：句首没人预测它
+shift_logits = logits[:, :-1, :]   # 砍尾
+shift_labels = input_ids[:, 1:]    # 砍头
+
+# 第 3 步：算预测和真实词的差距；提问 token 标 -100 自动跳过
 loss = cross_entropy(shift_logits, shift_labels, ignore_index=-100)
 ```
 
@@ -78,18 +84,22 @@ def sft_loss(logits, labels, ignore_index=-100):
 
 ### 一句话记忆
 
-> **KL(p ‖ q) = E_p[log p − log q]。两种无偏估计：k1 = log(p/q)（高方差，单点可能为负）；k3 = q/p − 1 − log(q/p)（恒非负，注意 ratio 方向）。**
+> **量两个模型差多远。简单算法可能算出负数；保险算法永远 ≥ 0。**
 
 面试常考：PPO 里怎么算 KL？GRPO 里怎么算 KL？两种估计有何区别？
 
 ### 伪代码
 
 ```
-# 方法一：k1 估计（无偏但高方差，PPO 常用）
+# 方法一：k1（简单版，PPO 常用）
+# 思路：直接把 (当前 - 参考) 取平均
+# 缺点：样本少时可能算出负数
 kl = (log_prob - ref_log_prob).mean()
 
-# 方法二：k3 估计（无偏且恒非负，GRPO / trl 默认）
-log_ratio = ref_log_prob - log_prob      # 注意方向：ratio = q/p
+# 方法二：k3（保险版，GRPO / trl 默认）
+# 第 1 步：算 log(参考 / 当前)，注意方向反过来
+log_ratio = ref_log_prob - log_prob
+# 第 2 步：套公式 exp(x) - 1 - x，这个式子保证恒 ≥ 0
 kl = (exp(log_ratio) - 1 - log_ratio).mean()
 ```
 

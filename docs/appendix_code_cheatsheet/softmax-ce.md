@@ -8,13 +8,18 @@
 
 ### 一句话记忆
 
-> **先减 max 再 exp，分母是所有 exp 之和。**
+> **先减最大值，再 exp、再求和、再相除——防止数字爆炸。**
 
 ### 伪代码
 
 ```
+# 第 1 步：所有数减去最大值（最大的变成 0，避免 exp 溢出）
 x_shifted = x - max(x)
+
+# 第 2 步：每个数取指数
 exp_x = exp(x_shifted)
+
+# 第 3 步：除以总和，归一化成概率（加起来等于 1）
 softmax = exp_x / sum(exp_x)
 ```
 
@@ -55,7 +60,7 @@ def manual_softmax(x, dim=-1):
 
 ### 一句话记忆
 
-> **$\log\sum\exp(x) = \text{max}(x) + \log\sum\exp(x - \text{max}(x))$。**
+> **算 log(softmax) 别分两步——直接 log-sum-exp，先把 max 提出来。**
 
 面试追问：`log(softmax(x))` 怎么算才不会溢出？答：不要先 softmax 再 log，直接用 log-softmax。
 
@@ -85,12 +90,15 @@ def manual_log_softmax(x, dim=-1):
 
 ### 一句话记忆
 
-> **one-hot 标签的负对数概率：$-\sum_k y_k \log p_k$。简化版（整数标签）：$-\log p_{y}$。**
+> **预测对了多少看概率：取目标位置的概率，加负号取 log。**
 
 ### 伪代码
 
 ```
+# 第 1 步：logits 过 log_softmax，得到每个类的 log 概率
 log_probs = log_softmax(logits)
+
+# 第 2 步：取出"正确答案"那个位置的 log 概率，取负取平均
 loss = -log_probs[target].mean()
 ```
 

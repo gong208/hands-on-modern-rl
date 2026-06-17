@@ -8,12 +8,17 @@
 
 ### 一句话记忆
 
-> **logits 除以 T 再 softmax。T 大 → 更随机，T 小 → 更确定。**
+> **logits 除以 T 再 softmax。T 大更随机，T 小更确定。**
 
 ### 伪代码
 
 ```
+# 第 1 步：logits 除以 T
+#   T 大 → 数之间差距变小 → 概率更平均
+#   T 小 → 数之间差距变大 → 概率更尖
 scaled_logits = logits / temperature
+
+# 第 2 步：softmax 转成概率
 probs = softmax(scaled_logits)
 ```
 
@@ -42,13 +47,18 @@ def sample_with_temperature(logits, temperature=1.0):
 
 ### 一句话记忆
 
-> **只保留概率最大的 k 个 token，其余设为 -inf，再 softmax 归一化采样。**
+> **只留概率最高的 k 个，其他全砍掉（设 -inf），再采样。**
 
 ### 伪代码
 
 ```
+# 第 1 步：找出 logits 最大的 k 个值，记下阈值
 top_k_values, top_k_indices = topk(logits, k)
+
+# 第 2 步：低于阈值的全部设成 -inf（softmax 后变 0）
 logits[not in top_k] = -inf
+
+# 第 3 步：softmax 重新归一化，从剩下 k 个里采样
 probs = softmax(logits)
 sample from probs
 ```
@@ -98,20 +108,24 @@ def top_k_sample(logits, k, temperature=1.0):
 
 ### 一句话记忆
 
-> **把 token 按概率从大到小排，累加到 p 就停，只保留前这些。**
+> **按概率从大到小排，累加到 p 就停——只从这群高概率 token 里采样。**
 
 ### 伪代码
 
 ```
+# 第 1 步：logits 从大到小排序
 sorted_logits = sort_desc(logits)
+
+# 第 2 步：转概率，再算累积概率（从大到小累加）
 sorted_probs = softmax(sorted_logits)
 cumulative_probs = cumsum(sorted_probs)
 
-# 累积概率超过 p 的位置设为 -inf
+# 第 3 步：累积值超过 p 之后的所有位置，设成 -inf
+#   注意：要减去当前 prob 再比，保证至少留一个
 cutoff_mask = cumulative_probs - sorted_probs > p
 sorted_logits[cutoff_mask] = -inf
 
-# 还原顺序，softmax，采样
+# 第 4 步：还原原顺序，softmax，采样
 ```
 
 ### 记忆方法

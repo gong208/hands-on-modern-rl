@@ -8,16 +8,23 @@
 
 ### 一句话记忆
 
-> **$QK^T$ 除 $\sqrt{d_k}$，加 mask，过 softmax，乘 $V$。**
+> **Q 和 K 点积打分，除根号、遮未来、softmax、再乘 V。**
 
 $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V$$
 
 ### 伪代码
 
 ```
+# 第 1 步：Q 和 K 点积 = 每个 Q 看每个 K 的相似度，除根号 d_k 防止数值过大
 scores = Q @ K^T / sqrt(d_k)
-scores = scores + mask    # causal: 上三角设为 -inf
+
+# 第 2 步：加 mask，把"未来"位置压成 -inf（语言模型只能看左边）
+scores = scores + mask
+
+# 第 3 步：softmax 转成权重（加起来等于 1）
 attn_weights = softmax(scores, dim=-1)
+
+# 第 4 步：权重乘 V，得到加权后的输出
 output = attn_weights @ V
 ```
 
@@ -88,23 +95,26 @@ def causal_mask(seq_len):
 
 ### 一句话记忆
 
-> **把 d_model 切成 h 份，每份独立做 attention，拼接后过线性层。**
+> **总维度切成 h 份，每份单独做一次 attention，最后拼回去过线性层。**
 
 ### 伪代码
 
 ```
-Q = x @ W_Q   # [B, seq, d_model] → [B, seq, d_model]
+# 第 1 步：x 过三个线性层，得到 Q、K、V（每个仍是 [B, seq, d_model]）
+Q = x @ W_Q
 K = x @ W_K
 V = x @ W_V
 
-# 切多头: [B, seq, d_model] → [B, heads, seq, d_k]
+# 第 2 步：把最后一维 d_model 切成 h 个头
+#   [B, seq, d_model] → [B, heads, seq, d_k]
 Q = Q.view(B, seq, heads, d_k).transpose(1, 2)
 K = K.view(B, seq, heads, d_k).transpose(1, 2)
 V = V.view(B, seq, heads, d_k).transpose(1, 2)
 
+# 第 3 步：每个头独立做 attention
 attn_out = scaled_dot_product_attention(Q, K, V, mask)
 
-# 合并头: [B, heads, seq, d_k] → [B, seq, d_model]
+# 第 4 步：把头拼回 d_model，再过输出线性层
 attn_out = attn_out.transpose(1, 2).contiguous().view(B, seq, d_model)
 output = attn_out @ W_O
 ```
@@ -162,8 +172,8 @@ class MultiHeadAttention(nn.Module):
 
 ### 一句话记忆
 
-- **MQA**：所有 Q 头共享**同一组** K/V。最省 KV cache，但可能损失表达能力。
-- **GQA**：Q 头分成 g 组，每组内共享 K/V。在 MHA 和 MQA 之间取折中。
+- **MQA**：所有 Q 头共用**同一组** K/V。最省显存，但可能变笨。
+- **GQA**：Q 头分几组，组内共用 K/V。省显存又不至于太笨。
 
 ### PyTorch 实现（GQA）
 

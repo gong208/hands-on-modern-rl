@@ -8,15 +8,21 @@ title: C.1 SFT and KL
 
 ### One-Line Memory
 
-> Shift the input right by one token to form targets, and compute cross-entropy only on the answer region (`label != -100`).
+> Read the previous word, guess the next. The question doesn't count; only the answer does.
 
 ### Pseudocode
 
 ```
-logits = model(input_ids)          # [B, seq_len, vocab_size]
-shift_logits = logits[:, :-1, :]   # drop the last prediction position
-shift_labels = input_ids[:, 1:]    # drop the first token
+# Step 1: run the model on the full sequence; each position predicts its "next word"
+logits = model(input_ids)
 
+# Step 2: shift to align — position t predicts the real word at position t+1
+#   drop the last logits slot: there is no "next word" after the end
+#   drop the first label: nobody predicts the very first word
+shift_logits = logits[:, :-1, :]   # cut the tail
+shift_labels = input_ids[:, 1:]    # cut the head
+
+# Step 3: cross-entropy between prediction and truth; question tokens (=-100) are skipped
 loss = cross_entropy(shift_logits, shift_labels, ignore_index=-100)
 ```
 
@@ -87,7 +93,7 @@ def sft_loss(logits, labels, ignore_index=-100):
 
 ### One-Line Memory
 
-> $\mathrm{KL}(p \| q) = \mathbb{E}_p[\log p - \log q]$. Both estimators below are unbiased: k1 = `log(p/q)` (high variance, individual samples can be negative); k3 = `q/p - 1 - log(q/p)` (always non-negative — mind the ratio direction).
+> Measure how far apart two models are. The simple estimator can go negative; the safe one never does.
 
 Interview-style questions:
 
@@ -98,11 +104,15 @@ Interview-style questions:
 ### Pseudocode
 
 ```
-# Method 1: k1 estimate (unbiased, high variance; common in PPO)
+# Method 1: k1 (simple version, common in PPO)
+# Idea: average the difference (current - reference)
+# Downside: with few samples the estimate can go negative
 kl = (log_prob - ref_log_prob).mean()
 
-# Method 2: k3 estimate (unbiased, nonnegative; common in GRPO / trl)
-log_ratio = ref_log_prob - log_prob      # mind the direction: ratio = q/p
+# Method 2: k3 (safe version, default in GRPO / trl)
+# Step 1: compute log(reference / current) — note the direction is flipped
+log_ratio = ref_log_prob - log_prob      # ratio = q/p
+# Step 2: apply the formula exp(x) - 1 - x; this expression is guaranteed >= 0
 kl = (exp(log_ratio) - 1 - log_ratio).mean()
 ```
 
