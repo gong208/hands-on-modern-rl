@@ -121,6 +121,60 @@ $$L^{\text{CLIP}}(\theta) = \mathbb{E}_t \left[ \min \left( r_t(\theta) \cdot A_
 
 裁剪将较大的目标值（3.30）压缩至 2.40。此时目标函数在该区间内变为常数，**梯度对 $\theta$ 的依赖消失，不再鼓励继续增大 $\pi(a_1\mid s)$**。
 
+### 裁剪为何让梯度归零
+
+要理解"目标函数变为常数"的含义，需要先看清 clip 函数的完整定义。$\text{clip}(x, a, b)$ 是一个三段函数：
+
+$$\text{clip}(x, a, b) = \begin{cases} a & x < a \\ x & a \leq x \leq b \\ b & x > b \end{cases}$$
+
+代入 $a = 1 - \varepsilon = 0.8$、$b = 1 + \varepsilon = 1.2$，其图像为一条折线：左右两段是水平线（取值固定为 $0.8$ 与 $1.2$），中间一段是斜率为 1 的对角线。
+
+| $r_t$ 的位置            | clip 输出  | 是否含 $\theta$ |
+| ----------------------- | ---------- | --------------- |
+| $r_t < 0.8$             | 恒为 $0.8$ | 否（纯数字）    |
+| $0.8 \leq r_t \leq 1.2$ | $r_t$ 本身 | 是              |
+| $r_t > 1.2$             | 恒为 $1.2$ | 否（纯数字）    |
+
+下面用链式法则完整推一遍。先写出 $r_t(\theta)$ 的依赖关系：
+
+$$r_t(\theta) = \frac{\pi_\theta(a_t\mid s_t)}{\pi_{\text{old}}(a_t\mid s_t)}$$
+
+其中 $\pi_{\text{old}}$ 是采样时的旧策略，已经是固定常数（本节微型示例中 $\pi_{\text{old}}(a_1\mid s) = 0.6$）。$\theta$ 只通过分子 $\pi_\theta$ 影响 $r_t$。
+
+裁剪项的梯度按链式法则展开：
+
+$$\nabla_\theta\left[\text{clip}(r_t(\theta), 0.8, 1.2) \cdot A_t\right] = A_t \cdot \underbrace{\frac{\partial \,\text{clip}}{\partial r_t}}_{\text{clip 斜率}} \cdot \underbrace{\nabla_\theta r_t(\theta)}_{\text{含 } \theta}$$
+
+依赖链是 $\theta \xrightarrow{\nabla \pi_\theta} r_t \xrightarrow{\partial \text{clip}/\partial r_t} \text{clip} \xrightarrow{\times A_t} L$。链式法则是这三段导数的乘积，**任何一段为零，整条链乘积为零**。clip 是分段函数，各段斜率不同：
+
+| $r_t$ 的位置            | clip 斜率 $\partial \text{clip}/\partial r_t$ |
+| ----------------------- | --------------------------------------------- |
+| $r_t < 0.8$             | $0$（水平段）                                 |
+| $0.8 \leq r_t \leq 1.2$ | $1$（斜线段）                                 |
+| $r_t > 1.2$             | $0$（水平段）                                 |
+
+代入本节微型示例的数字：$\pi_{\text{old}}(a_1\mid s) = 0.6$、$A_t = 2$、$\nabla_\theta r_t = \nabla_\theta \pi_\theta / 0.6$。
+
+**情形一：$r_t = 1.65$（超出上界，顺方向越界）**。clip 在水平段，斜率为 $0$：
+
+$$\nabla_\theta[\text{clip}(r_t,0.8,1.2)\cdot A_t] = 2 \cdot 0 \cdot \frac{\nabla_\theta \pi_\theta}{0.6} = 0$$
+
+中间环节 $\partial \text{clip}/\partial r_t = 0$ 把 $\theta \to L$ 的依赖链切断了——无论 $\nabla_\theta \pi_\theta$ 多大，乘积仍为零。$\min$ 此处选裁剪项（$2.40 < 3.30$），梯度为零，更新停止。**这正是 PPO 的设计意图：好动作已经把概率推到 1.65 倍，应当停止**。
+
+**情形二：$r_t = 0.5$（跌破下界，反方向越界）**。clip 仍在水平段，斜率仍为 $0$：
+
+$$\nabla_\theta[\text{clip}(r_t,0.8,1.2)\cdot A_t] = 2 \cdot 0 \cdot \frac{\nabla_\theta \pi_\theta}{0.6} = 0$$
+
+但此时情形颠倒了——$A_t = 2$ 是好动作，本应增大 $r_t$，$r_t$ 却跌到 $0.5$，属于"更新方向错了"。**纯裁剪给出的梯度仍为零，策略被卡死在 $0.5$，爬不回 $[0.8, 1.2]$ 安全区**。这就是为什么需要外层 $\min$ 兜底。
+
+未裁剪项 $r_t \cdot A_t$ 中没有 clip，斜率恒为 $1$：
+
+$$\nabla_\theta[r_t \cdot A_t] = A_t \cdot 1 \cdot \nabla_\theta r_t = 2 \cdot \frac{\nabla_\theta \pi_\theta(a_t\mid s_t)}{0.6} = \frac{10}{3}\,\nabla_\theta \pi_\theta(a_t\mid s_t) \neq 0$$
+
+该项梯度方向是增大 $\pi_\theta(a_t\mid s_t)$，进而增大 $r_t$，把策略拉回 $[0.8, 1.2]$。$\min$ 比较两项数值 $1.0 < 1.6$，选未裁剪项，让梯度走这条非零链路——这就是 $\min$ 的兜底作用。
+
+这就是"目标函数变为常数"的全部含义：**相对于参数 $\theta$ 是常数**，不是说数值不变化。等价的几何语言是：目标函数曲线在该区间是水平线，水平线的斜率（导数）为零。
+
 该公式由三项构成，各司其职：
 
 - **未裁剪项** $r_t(\theta) \cdot A_t$：重要性采样后的标准策略梯度目标，即策略比率与优势的乘积。
@@ -169,7 +223,7 @@ flowchart LR
 | 纯裁剪 $\text{clip}(r_t,0.8,1.2)A_t$ | $0.8 \times 2 = 1.6$ | 零（该区间内目标为常数） | 策略停滞，无法回退 |
 | $\min$ 选取未裁剪值 $r_t A_t$        | $0.5 \times 2 = 1.0$ | 非零，方向为增大 $r_t$   | 策略被拉回安全区间 |
 
-$\min$ 比较 $1.6$ 与 $1.0$，选取较小的 $1.0$，即未裁剪值。该项的梯度方向为增大 $r_t$，将策略推回裁剪区间内。纯裁剪在该区间内目标函数为常数，梯度为零，策略无法自行返回。
+$\min$ 比较 $1.6$ 与 $1.0$，选取较小的 $1.0$，即未裁剪项。上节[情形二](#裁剪为何让梯度归零)已推出：纯裁剪在水平段梯度为零，策略卡死在 $r_t = 0.5$ 处；未裁剪项梯度 $= \tfrac{10}{3}\,\nabla_\theta \pi_\theta(a_t\mid s_t) \neq 0$，方向为增大 $r_t$，把策略推回 $[0.8, 1.2]$ 安全区。$\min$ 在此处改选未裁剪项，正是为了让梯度走这条非零链路。
 
 四种情形汇总如下：
 
