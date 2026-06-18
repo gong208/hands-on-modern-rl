@@ -26,7 +26,7 @@ $$\mathbb{E}_{\pi_\theta} \left[ \sum_t \nabla_\theta \log \pi_\theta(a_t | s_t)
 
 The last step uses a key identity: the expectation of the score function (the gradient of the log-probability) is zero. Intuitively, $\nabla_\theta \log \pi_\theta(a|s)$ measures “how should we adjust parameters to increase the probability of a particular action.” If we take a probability-weighted average over all actions, the increases and decreases cancel exactly.
 
-:::details Proof: $\mathbb{E}\_{a \sim \pi\_\theta}[\nabla\_\theta \log \pi\_\theta(a|s)] = 0$
+:::details Proof: $\mathbb{E}_{a \sim \pi_\theta}[\nabla_\theta \log \pi_\theta(a|s)] = 0$
 
 The normalization condition of a probability distribution is $\sum_a \pi_\theta(a|s) = 1$. Taking the gradient with respect to $\theta$ on both sides gives:
 

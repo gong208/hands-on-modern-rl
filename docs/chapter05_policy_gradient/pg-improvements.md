@@ -20,7 +20,7 @@ $$\mathbb{E}_{\pi_\theta} \left[ \sum_t \nabla_\theta \log \pi_\theta(a_t | s_t)
 
 最后一步用到了一个关键恒等式：对数概率梯度的期望为零。直觉上，$\nabla_\theta \log \pi_\theta(a|s)$ 衡量的是"怎么调参数能增加某个动作的概率"，把所有动作的这个量按概率加权平均，增减刚好抵消。
 
-:::details 证明：$\mathbb{E}\_{a \sim \pi\_\theta}[\nabla\_\theta \log \pi\_\theta(a|s)] = 0$
+:::details 证明：$\mathbb{E}_{a \sim \pi_\theta}[\nabla_\theta \log \pi_\theta(a|s)] = 0$
 
 概率分布的归一化条件：$\sum_a \pi_\theta(a|s) = 1$。两边对 $\theta$ 求梯度：
 
