@@ -64,6 +64,41 @@ for each checkpoint:
 
 Keep the evaluation set fixed, keep decoding parameters fixed, and keep prompt order reproducible. Otherwise sampling noise will contaminate every comparison.
 
+## Per-Stage Metrics
+
+The three-layer framework slices by _evaluation method_ — benchmark, preference, manual. But RLHF is a pipeline: base → SFT → RM → PPO, each stage producing a different artifact, so metrics should differ too. Use both axes together: horizontal = what each stage delivers, vertical = what each method catches.
+
+| Stage        | Key metrics                                                                  | What to watch                                       |
+| ------------ | ---------------------------------------------------------------------------- | --------------------------------------------------- |
+| Base model   | Perplexity (PPL), MMLU/CEval                                                 | Baseline quality, sets reference for later stages   |
+| SFT model    | Instruction-following rate, format compliance, val loss                      | Coverage, PPO's starting point must not be too weak |
+| Reward model | Pairwise accuracy, reward margin, reward-length correlation                  | RM bias (length hacking, position bias)             |
+| PPO policy   | KL divergence curve, reward trajectory, length distribution, win rate vs SFT | Training stability + final alignment                |
+
+### Base model: perplexity and general capability
+
+The base model has not been instruction-tuned and cannot hold a conversation. Two things matter here. **Perplexity (PPL)** measures raw language modeling quality on a held-out corpus:
+
+$$
+\text{PPL} = \exp\!\left(-\frac{1}{N}\sum_{t=1}^{N}\log p_\theta(y_t\mid y_{<t})\right)
+$$
+
+Lower is better. **General benchmarks** (MMLU, CEval, HellaSwag) quantify knowledge and reasoning baseline. Neither is used to "tune the base" — they exist to be re-measured after SFT and PPO to confirm capabilities did not regress.
+
+### SFT model: instruction following and loss
+
+After SFT the model understands instructions; the question is whether it obeys them. **Instruction-following rate**: a fixed set of prompts ("output only JSON", "answer in two sentences"), measure the proportion with compliant format. **Val loss**: whether it converges — overfitting shows up as train loss still dropping while val loss rebounds. SFT is PPO's starting point; a model that cannot follow instructions will make PPO inefficient or non-convergent.
+
+### Reward model: accuracy and bias
+
+The RM decides which direction PPO walks, and its biases get amplified. **Pairwise accuracy**: on held-out preference pairs, the proportion where RM scores chosen higher than rejected; typical target 65-75% (human annotators themselves agree only ~80%, do not chase 100%). **Reward margin**: mean gap between chosen and rejected scores; too small means low discrimination, too large may indicate overfitting. **Reward-length correlation**: Pearson correlation between RM score and response length; absolute value > 0.5 is a strong length-hacking signal.
+
+### PPO policy: training monitoring and final comparison
+
+Three things to watch during PPO. **KL divergence** should fluctuate in a reasonable range; blowing past 10 means the policy is too far from reference and may be reward hacking. **Reward trajectory** should rise smoothly, not jump — sharp jumps usually accompany length inflation. **Response length distribution**: if it shifts right while reward rises, suspect the RM favors long answers. After training, return to the three-layer framework: run benchmarks vs base, do pairwise vs SFT, manual review for templating.
+
+Metrics across the four stages are not interchangeable: base PPL tells you nothing about whether SFT learned to follow instructions; SFT instruction-following rate tells you nothing about RM bias. Each stage has its own diagnostic signal — record and compare them separately.
+
 ## Automatic Benchmarks
 
 The first hard line for RLHF is: **alignment must not break core skills**. For small-model experiments you do not need the full HELM, MMLU, or MT-Bench right away. Start with a lightweight regression set:
