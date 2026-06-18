@@ -221,7 +221,47 @@ The four out-of-bounds cases:
 | $<0$  | $< 1-\varepsilon$ | unclipped $>$ clipped | clipped value   | zero (flat region)      | same-direction stop           |
 | $<0$  | $> 1+\varepsilon$ | unclipped $<$ clipped | unclipped value | nonzero, decrease $r_t$ | opposite-direction correction |
 
-Across all four cases, $\min$ consistently picks the **more pessimistic** (numerically smaller) candidate: same-direction overshoot makes clip cut the inflated reward, so the clipped value is more pessimistic; opposite-direction overshoot makes the unclipped value honestly expose that the reward really is low, so the unclipped value is more pessimistic. **"More pessimistic" coincides exactly with "gradient direction is correct"** — this is the fundamental reason $\min$ can guarantee a non-zero gradient whenever correction is needed (and only then).
+### Formal Proof That the Gradient Never Reverses
+
+The table above verifies the min's choice across four cases. Can we give a unified mathematical guarantee that does not depend on case analysis? Yes — and the proof is remarkably short.
+
+**Proposition**: For any $r_t > 0$ and $A_t \neq 0$, the PPO objective $L(r_t, A_t) = \min(r_t A_t,\; c \cdot A_t)$ (where $c = \text{clip}(r_t, 1-\varepsilon, 1+\varepsilon)$) satisfies the following with respect to the partial derivative in $r_t$:
+
+$$\frac{\partial L}{\partial r_t} \in \{0,\; A_t\}$$
+
+**Corollary**: $A_t \cdot \frac{\partial L}{\partial r_t} \in \{0,\; A_t^2\} \geq 0$. That is, the gradient component is either zero or has the same sign as $A_t$ — **it never reverses**.
+
+**Proof**: By the derivative rule of min — pick the smaller of two terms, and its derivative equals that term's derivative. As a function of $r_t$, $c$ has only three forms:
+
+| $r_t$ position                              | $c$             | $\frac{dc}{dr_t}$ |
+| ------------------------------------------- | --------------- | ----------------- |
+| $r_t < 1-\varepsilon$                       | $1-\varepsilon$ | $0$               |
+| $1-\varepsilon \leq r_t \leq 1+\varepsilon$ | $r_t$           | $1$               |
+| $r_t > 1+\varepsilon$                       | $1+\varepsilon$ | $0$               |
+
+Determine which term $L$ equals, case by case:
+
+- **$r_t \in [1-\varepsilon, 1+\varepsilon]$**: $c = r_t$, the two terms are equal, $L = r_t A_t$, so $\frac{\partial L}{\partial r_t} = A_t$.
+- **$r_t > 1+\varepsilon$**: $c = 1+\varepsilon$ is constant.
+  - $A_t > 0$: $r_t A_t > (1+\varepsilon) A_t$, min picks the clipped term (constant), so $\frac{\partial L}{\partial r_t} = 0$.
+  - $A_t < 0$: multiplying by a negative flips the inequality, $r_t A_t < (1+\varepsilon) A_t$, min picks the unclipped term, so $\frac{\partial L}{\partial r_t} = A_t$.
+- **$r_t < 1-\varepsilon$**: $c = 1-\varepsilon$ is constant.
+  - $A_t > 0$: $r_t A_t < (1-\varepsilon) A_t$, min picks the unclipped term, so $\frac{\partial L}{\partial r_t} = A_t$.
+  - $A_t < 0$: after the flip $r_t A_t > (1-\varepsilon) A_t$, min picks the clipped term (constant), so $\frac{\partial L}{\partial r_t} = 0$.
+
+The five reachable cases (one inside the interval, two on each side) give $\frac{\partial L}{\partial r_t} \in \{0, A_t\}$. QED. $\square$
+
+**Geometric interpretation**: As a function of $r_t$, $L$ is a piecewise polyline whose slope takes only two values — $0$ or $A_t$. Segments with slope $A_t$ (containing the true $r_t$) supply the corrective gradient; segments with slope $0$ (clip's flat regions) halt the update. The slope of the entire curve never takes the value $-A_t$ — **this is precisely the geometric portrait of "the gradient never reverses"**.
+
+By the chain rule $\nabla_\theta L = \frac{\partial L}{\partial r_t} \cdot \nabla_\theta r_t$, combined with $r_t(\theta) = \pi_\theta(a_t\mid s_t) / \pi_{\text{old}}(a_t\mid s_t)$ ($\pi_{\text{old}}$ is a positive constant):
+
+- When $\frac{\partial L}{\partial r_t} = A_t > 0$, $\nabla_\theta L$ points in the direction that increases $\pi_\theta(a_t\mid s_t)$ — good actions are reinforced.
+- When $\frac{\partial L}{\partial r_t} = A_t < 0$, $\nabla_\theta L$ points in the direction that decreases $\pi_\theta(a_t\mid s_t)$ — bad actions are suppressed.
+- When $\frac{\partial L}{\partial r_t} = 0$, the gradient is zero and the update stops — and this only occurs when the policy has overshot in the correct direction, where stopping is the design intent.
+
+**Every PPO update either stops, or moves in the direction indicated by the advantage — it never reverses, and it never stalls when correction is needed.**
+
+Across all four cases, $\min$ consistently picks the **more pessimistic** (numerically smaller) candidate: same-direction overshoot makes clip cut the inflated reward, so the clipped value is more pessimistic; opposite-direction overshoot makes the unclipped value honestly expose that the reward really is low, so the unclipped value is more pessimistic. **"More pessimistic" coincides exactly with "gradient direction is correct"** — this is the intuition behind the formal proof above.
 
 > Replacing $\min$ with $\max$ flips the rule to "pick the more optimistic": same-direction overshoot would no longer be cut (encouraging further excursions), and opposite-direction overshoot would have its reward inflated (rewarding the wrong direction). Both cases fail. $\min$ cannot be replaced by $\max$.
 
