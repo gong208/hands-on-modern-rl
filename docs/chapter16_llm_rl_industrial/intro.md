@@ -27,7 +27,7 @@ flowchart TB
     subgraph Async["异步 RL 框架"]
         AReaL["AReaL<br/>(Ant Group+清华, 流式异步)"]
         AgentRL["AgentRL<br/>(THUDM/智谱, 多轮多任务)"]
-        SLIME["SLIME<br/>(智谱, server-based rollout)"]
+        SLIME["slime<br/>(THUDM/智谱, RL scaling)"]
         ROLL["ROLL<br/>(阿里达摩院, rollout 工厂)"]
         LlamaRL["LlamaRL<br/>(Meta, 纯异步后训练)"]
     end
@@ -80,7 +80,7 @@ $$\rho_t^{\text{stale}} = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\text{gen
 
 #### SLIME
 
-[SLIME](https://github.com/THUNLP/slime)（清华 THUNLP）是 server-based rollout 框架。它把 rollout 抽象为 HTTP 服务：训练器把 prompt 发给 rollout server，server 返回 trajectories。这种设计让 custom rollout logic（多轮工具调用、环境交互、verifier-guided branching）可以独立于训练栈开发。SLIME 的接口被 GLM-5、AReaL 等框架复用。
+[slime](https://github.com/THUDM/slime)（THUDM / 智谱生态，2025）是面向 RL scaling 的 LLM post-training 框架，不是单纯的 HTTP rollout 服务。它的两项核心能力是：用 Megatron + SGLang 支持高性能训练与 rollout；通过自定义数据生成接口和 server-based engines 接入任意 rollout 工作流。多轮工具调用、环境交互、verifier 反馈和 reward 计算都走同一套 training / rollout / Data Buffer 路径。slime 已在 GLM-4.5、GLM-4.6、GLM-5 等模型后训练中验证。
 
 #### ROLL
 
@@ -118,7 +118,7 @@ $$\rho_t^{\text{stale}} = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\text{gen
 └── 大集群（256+ 卡，100B+）
     ├── MoE + 长上下文 → veRL + Megatron
     ├── 万亿参数 + 物理分离 → LlamaRL 风格
-    └── 多智能体 + 工具环境 → AgentRL / SLIME
+    └── 多轮工具 + 自定义 rollout → AgentRL / slime
 ```
 
 实战中一个反复出现的模式是：**先用 TRL/OpenRLHF 做算法验证，再用 veRL 做规模放大**。算法正确性验证不需要大规模集群，TRL 单卡 30 分钟能跑通 GRPO。验证通过后再切到 veRL 做大规模训练，避免在工程问题上浪费算法迭代时间。

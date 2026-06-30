@@ -437,7 +437,7 @@ for step in range(n_steps):
 
 ### 异步模式
 
-[AReaL (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)、[AgentRL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)、[SLIME](https://github.com/THUDM/SLIME)、[ROLL](https://github.com/alibaba/ROLL)、[LlamaRL](https://github.com/meta-llama/llama-rl) 等异步框架的思路：**rollout 和 training 解耦**，rollout actor 持续采样，trainer 用最新可用数据更新策略。
+[AReaL (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)、[AgentRL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)、[slime](https://github.com/THUDM/slime)、[ROLL](https://github.com/alibaba/ROLL)、[LlamaRL](https://github.com/meta-llama/llama-rl) 等异步框架的思路：**rollout 和 training 解耦**，rollout actor 持续采样，trainer 用最新可用数据更新策略。
 
 ```python
 # 异步主循环（伪代码）

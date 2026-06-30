@@ -214,7 +214,7 @@ DeepSeek-R1-Zero 的实验表明，跳过 SFT 直接进行 RL 也能涌现出推
 | ------------ | ------------------- | ----------------------------------------------------------------- | -------------------- | --------------------------------------------------------- |
 | **OpenRLHF** | 开源社区            | 代码最简洁（8k 行），算法与 Agent 执行解耦，一行代码切换单轮/多轮 | 是                   | [OpenRLHF/OpenRLHF](https://github.com/OpenRLHF/OpenRLHF) |
 | **verl**     | 字节跳动 / 开源社区 | 吞吐最高，训推在同一组 GPU 上动态切换，生态扩展最多               | 基础支持，社区扩展中 | [verl-project/verl](https://github.com/verl-project/verl) |
-| **slime**    | 清华 / 智谱         | 训练和推理彻底拆成独立服务，MoE 模型效率最高                      | 基础支持             | [THUDM/slime](https://github.com/THUDM/slime)             |
+| **slime**    | THUDM / 智谱生态    | Megatron + SGLang 后训练框架，MoE 模型效率高                      | 基础支持             | [THUDM/slime](https://github.com/THUDM/slime)             |
 | **AReaL**    | 蚂蚁 / 清华         | 全异步训练——GPU 完全不等，速度提升 2.77 倍                        | 是                   | [inclusionAI/AReaL](https://github.com/inclusionAI/AReaL) |
 | **ROLL**     | 阿里巴巴淘天        | 推理（RLVR）+ Agent 双模式，原生 Qwen 支持                        | 是                   | [alibaba/ROLL](https://github.com/alibaba/ROLL)           |
 | **SkyRL**    | UC Berkeley         | 模块化全栈——训练、Agent 编排、任务环境各自独立                    | 是                   | [NovaSky-AI/SkyRL](https://github.com/NovaSky-AI/SkyRL)   |
