@@ -26,7 +26,7 @@ flowchart TB
     end
     subgraph Async["异步 RL 框架"]
         AReaL["AReaL<br/>(Ant Group+清华, 流式异步)"]
-        AgentRL["AgentRL<br/>(智谱+清华, 多智能体)"]
+        AgentRL["AgentRL<br/>(THUDM/智谱, 多轮多任务)"]
         SLIME["SLIME<br/>(智谱, server-based rollout)"]
         ROLL["ROLL<br/>(阿里达摩院, rollout 工厂)"]
         LlamaRL["LlamaRL<br/>(Meta, 纯异步后训练)"]
@@ -76,7 +76,7 @@ $$\rho_t^{\text{stale}} = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\text{gen
 
 #### AgentRL
 
-[AgentRL](https://github.com/zhipuai-llm/AgentRL)（智谱 + 清华）是面向多智能体场景的异步框架。它和 AReaL 共享底层异步原语，但额外支持：multi-agent rollout（多个模型实例并行探索不同 scaffold）、tool execution sandbox（独立容器跑代码、SQL、浏览器）、environment branching（同一任务可以分支探索不同工具调用顺序）。AgentRL 是 GLM-5 agentic RL 阶段的主力框架。
+[AgentRL](https://github.com/THUDM/AgentRL)（THUDM / 智谱，2025）是面向多轮、多任务 Agentic RL 的训练与环境部署框架，论文 [arXiv:2510.04206](https://arxiv.org/abs/2510.04206)。它的核心不是“多智能体”，而是把 generation 和 training 做成 fully-asynchronous pipeline，并为异构任务环境提供统一的 function-call API、容器化环境开发、集中式 controller 与 task worker。算法侧，AgentRL 使用 cross-policy sampling 增强多轮探索，并用 task advantage normalization 稳定多任务训练；该框架也被用于 AutoGLM 的构建。
 
 #### SLIME
 
@@ -101,7 +101,7 @@ $$\rho_t^{\text{stale}} = \frac{\pi_\theta(a_t \mid s_t)}{\pi_{\theta_{\text{gen
 | **TRL**       | HuggingFace | Accelerate    | 无原生     | 否       | 单机/小集群 | PPO/GRPO/DPO            | 11k                   | 高         |
 | **NeMo**      | NVIDIA      | Megatron-LM   | TRT-LLM    | 否       | 千卡       | PPO/DPO/SteerLM         | 1.8k                  | 中         |
 | **AReaL**     | Ant Group和清华 | FSDP      | vLLM/SGLang| 全异步   | 百-千卡    | PPO/GRPO + 异步         | 1.1k                  | 中         |
-| **AgentRL**   | 智谱+清华   | FSDP          | vLLM       | 全异步   | 千卡       | PPO/GRPO + multi-agent  | 0.8k                  | 中         |
+| **AgentRL**   | THUDM/智谱  | FSDP/Ray      | SGLang     | 全异步   | 千卡       | GRPO + 多轮多任务       | 0.8k                  | 中         |
 | **LlamaRL**   | Meta        | Megatron      | 自研       | 全异步   | 万卡       | 内部 PPO 变体           | 0.5k                  | 低（内部） |
 
 ### 选型决策树

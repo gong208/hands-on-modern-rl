@@ -661,7 +661,7 @@ RL 环境质量差会导致一系列 alignment failures——策略学到 verifi
 - [Anthropic 2025.11 "Effective Harnesses"](https://www.anthropic.com/engineering/effective-harnesses)
 - [Mechanize: RL Environments for All Digital Work](https://mechanize.dev/)
 - [AReaL: Asynchronous RL for LLMs (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)
-- [AgentRL:大规模异步 agentic RL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)
+- [AgentRL: 多轮多任务 Agentic RL 框架 (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)
 - [CyberGym: CTF 训练环境 (arXiv:2506.02548)](https://arxiv.org/abs/2506.02548)
 - [Vending-Bench: 长程 benchmark (arXiv:2502.15840)](https://arxiv.org/abs/2502.15840)
 - [τ-bench: Salesforce agent benchmark (arXiv:2404.44581)](https://arxiv.org/abs/2404.44581)
