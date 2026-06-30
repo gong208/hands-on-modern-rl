@@ -437,7 +437,7 @@ for step in range(n_steps):
 
 ### 异步模式
 
-[AReaL (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)、[AgentRL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)、[SLIME](https://github.com/THUDM/SLIME)、[ROLL](https://github.com/alibaba/ROLL)、[LlamaRL](https://github.com/meta-llama/llama-rl) 等异步框架的思路：**rollout 和 training 解耦**，rollout actor 持续采样，trainer 用最新可用数据更新策略。
+[AReaL (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)、[AgentRL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)、[slime](https://github.com/THUDM/slime)、[ROLL](https://github.com/alibaba/ROLL)、[LlamaRL](https://github.com/meta-llama/llama-rl) 等异步框架的思路：**rollout 和 training 解耦**，rollout actor 持续采样，trainer 用最新可用数据更新策略。
 
 ```python
 # 异步主循环（伪代码）
@@ -661,7 +661,7 @@ RL 环境质量差会导致一系列 alignment failures——策略学到 verifi
 - [Anthropic 2025.11 "Effective Harnesses"](https://www.anthropic.com/engineering/effective-harnesses)
 - [Mechanize: RL Environments for All Digital Work](https://mechanize.dev/)
 - [AReaL: Asynchronous RL for LLMs (arXiv:2505.24298)](https://arxiv.org/abs/2505.24298)
-- [AgentRL:大规模异步 agentic RL (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)
+- [AgentRL: 多轮多任务 Agentic RL 框架 (arXiv:2510.04206)](https://arxiv.org/abs/2510.04206)
 - [CyberGym: CTF 训练环境 (arXiv:2506.02548)](https://arxiv.org/abs/2506.02548)
 - [Vending-Bench: 长程 benchmark (arXiv:2502.15840)](https://arxiv.org/abs/2502.15840)
 - [τ-bench: Salesforce agent benchmark (arXiv:2404.44581)](https://arxiv.org/abs/2404.44581)

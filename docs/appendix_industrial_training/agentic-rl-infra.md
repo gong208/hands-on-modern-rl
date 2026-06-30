@@ -203,11 +203,11 @@ curl -X POST http://controller:8000/scale \
 
 | 框架     | 出品方             | 特点                              | 多模态 | 异步       |
 | -------- | ------------------ | --------------------------------- | ------ | ---------- |
-| AReaL    | 清华 & 蚂蚁        | 全异步，2.77x 提速                | 否     | 全异步     |
+| AReaL    | Ant Group 和清华   | 全异步，2.77x 提速                | 否     | 全异步     |
 | Seer     | Moonshot AI (Kimi) | 极致同步，rollout 吞吐 +74–97%    | 否     | 同步       |
 | Agent-R1 | 中科大             | MDP 扩展，过程/结果奖励分离       | 否     | 部分异步   |
 | NeMo Gym | NVIDIA             | 科学 Agent 环境                   | 否     | 同步为主   |
-| slime    | 清华 / 智谱        | Megatron + SGLang，MoE 原生优化   | 否     | 支持异步   |
+| slime    | THUDM / 智谱生态   | Megatron + SGLang，MoE 原生优化   | 否     | 支持异步   |
 | Relax    | 小红书             | TransferQueue + 弹性扩展 + 全模态 | 是     | 全异步流式 |
 
 Relax 是目前唯一同时支持全模态和全异步弹性扩展的 Agentic RL 引擎。Seer 则代表了另一个方向——不走向异步，而是在同步框架内通过在线上下文学习（divided rollout、context-aware scheduling、adaptive grouped speculative decoding）消除 rollout 长尾延迟，在不改变 GRPO 算法的前提下将吞吐提升 74–97%，同时保持严格的 on-policy 保证（[arXiv:2511.14617](https://arxiv.org/abs/2511.14617)）。slime 把 SGLang 作为原生推理层、Megatron 作为训练后端，对 GLM-4.5、Qwen3-30B-A3B、DeepSeek-R1 等 MoE 模型做了 fp8 rollout、DeepEP 通信等专项优化，适合 MoE 架构的大规模后训练（[THUDM/slime](https://github.com/THUDM/slime)）。Relax 论文见 [arxiv.org/abs/2604.11554](https://arxiv.org/abs/2604.11554)，代码见 [github.com/redai-infra/Relax](https://github.com/redai-infra/Relax)。
@@ -302,7 +302,7 @@ nanoRLHF 的价值不在于生产使用，而在于它用可读的代码把 B.1 
 
 [^2]: PyTorch Blog, "[A Primer on LLM Post-Training](https://pytorch.org/blog/a-primer-on-llm-post-training/)", 2025.
 
-[^3]: AReaL Team. "[AReaL: Async RL for Language Reasoning](https://arxiv.org/abs/2505.24298)." arXiv:2505.24298, 2025. [GitHub](https://github.com/inclusionAI/AReaL)
+[^3]: AReaL Team. "[AReaL: A Large-Scale Asynchronous Reinforcement Learning System for Language Reasoning](https://arxiv.org/abs/2505.24298)." arXiv:2505.24298, 2025. [GitHub](https://github.com/inclusionAI/AReaL)
 
 [^4]: Hou L et al. "[Seer: Online Context Learning for Fast Synchronous LLM Reinforcement Learning](https://arxiv.org/abs/2511.14617)." arXiv:2511.14617, 2025.
 

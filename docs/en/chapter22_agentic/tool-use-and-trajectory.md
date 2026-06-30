@@ -1137,7 +1137,7 @@ At this point, we have covered the core theory and engineering practice of Agent
 ### References
 
 - Cheng M, Ouyang J, Yu S, et al. "[Agent-R1: Training Powerful LLM Agents with End-to-End Reinforcement Learning](https://arxiv.org/abs/2511.14460)." arXiv:2511.14460, 2025. Benchmark Agentic RL framework that extends MDP modeling and distinguishes process reward from outcome reward. [GitHub](https://github.com/AgentR1/Agent-R1)
-- AReaL Team. "[AReaL: Async RL for Language Reasoning](https://arxiv.org/abs/2505.24298)." arXiv:2505.24298, 2025. Asynchronous RL framework from Tsinghua and Ant Group; fully asynchronous training improves speed by 2.77x. [GitHub](https://github.com/inclusionAI/AReaL)
+- AReaL Team. "[AReaL: A Large-Scale Asynchronous Reinforcement Learning System for Language Reasoning](https://arxiv.org/abs/2505.24298)." arXiv:2505.24298, 2025. Asynchronous RL framework from Ant Group and Tsinghua; fully asynchronous training improves speed by 2.77x. [GitHub](https://github.com/inclusionAI/AReaL)
 - NVIDIA. "[NeMo Gym](https://github.com/NVIDIA-NeMo/Gym)." NVIDIA's training platform for scientific agents.
 - Patil S, et al. "[The Berkeley Function Calling Leaderboard](https://gorilla.cs.berkeley.edu/leaderboard.html)." ICML 2025. BFCL leaderboard for evaluating LLM function-calling ability.
 - Jimenez C E, et al. "[SWE-bench: Can Language Models Resolve Real-World GitHub Issues?](https://arxiv.org/abs/2310.06770)." ICLR 2024. Benchmark for code agents.

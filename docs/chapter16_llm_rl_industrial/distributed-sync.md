@@ -452,20 +452,19 @@ class LlamaRLWorker:
 
 ### AReaL (Asynchronous RL)
 
-[AReaL, arXiv:2505.24298](https://arxiv.org/abs/2505.24298) 清华 + 蚂蚁 2025 年开源：
+[AReaL: A Large-Scale Asynchronous Reinforcement Learning System for Language Reasoning, arXiv:2505.24298](https://arxiv.org/abs/2505.24298) 是 Ant Group 和清华 2025 年开源的大规模异步 LLM RL 系统：
 
-**核心创新**：**Off-policy 容忍 + Importance Sampling 修正**。
+**核心创新**：**fully asynchronous rollout + staleness-aware PPO**。Rollout worker 持续生成样本，training worker 在拿到 batch 后立即消费；系统通过控制样本 staleness，并在 PPO 更新中加入针对旧策略样本的校正，缓解“生成策略已经落后当前训练策略 K 步”的偏移。
 
 ```python
 # AReaL 关键算法（简化）
-def off_policy_update(batch, current_weights):
-    # batch 是旧策略采集的
-    # 用 importance sampling 修正
-    old_log_probs = compute_log_probs(batch, old_weights)
-    new_log_probs = compute_log_probs(batch, current_weights)
-    importance_weights = torch.exp(new_log_probs - old_log_probs)
+def staleness_aware_update(batch, current_weights):
+    # batch 记录了 rollout 时的 policy version 与 logprob
+    gen_log_probs = batch["gen_log_probs"]
+    current_log_probs = compute_log_probs(batch, current_weights)
+    importance_weights = torch.exp(current_log_probs - gen_log_probs)
 
-    # 截断的 importance sampling（PPO 风格）
+    # 截断重要性权重，避免旧样本造成过大梯度
     clipped_weights = torch.clamp(importance_weights, 0.8, 1.2)
     loss = -(clipped_weights * advantages).mean()
 
@@ -482,31 +481,24 @@ def off_policy_update(batch, current_weights):
 
 ### AgentRL
 
-[AgentRL, arXiv:2510.04206](https://arxiv.org/abs/2510.04206) 2025 年 10 月发布的 agentic RL 框架：
+[AgentRL: Scaling Agentic Reinforcement Learning with a Multi-Turn, Multi-Task Framework, arXiv:2510.04206](https://arxiv.org/abs/2510.04206) 是 2025 年 10 月发布的多轮、多任务 Agentic RL 框架，代码在 [THUDM/AgentRL](https://github.com/THUDM/AgentRL)：
 
-**核心创新**：**针对 agentic 长任务优化**。
+**核心创新**：**fully-asynchronous generation-training pipeline + 统一环境接口**。训练侧用 rollout、actor、reference 三类 worker 池异步采样和更新；环境侧用 function-call API、containerized environment、centralized controller 和 task worker 管理异构任务。算法侧还引入 cross-policy sampling 和 task advantage normalization，分别增强多轮探索并稳定多任务训练。
 
 ```python
-# AgentRL 处理长 horizon 任务
-class AgentRLRollout:
-    def generate_trajectory(self, agent, env, max_steps=1000):
-        trajectory = []
-        state = env.reset()
-        for step in range(max_steps):
-            action = agent.act(state)
-            next_state, reward, done = env.step(action)
-            trajectory.append((state, action, reward))
-            if done:
-                break
-            state = next_state
-        return trajectory
+# AgentRL 异步训练结构（简化）
+rollout_workers.stream_trajectories(task_manager)
+actor_workers.update_policy(buffer.sample())
+reference_workers.compute_kl(buffer.sample())
+controller.route_function_calls(task_workers)
 ```
 
 **优势**：
 
-- 支持 multi-turn agent（[第 10 章](../chapter10_agentic_rl/multi-turn-rl)）
-- 异步处理长 horizon 的不同部分
-- 内置 sandbox 集成（[第 23 章 RL Environments](../chapter23_rl_environments/intro)）
+- 支持 multi-turn、multi-task agentic RL
+- 异步解耦 trajectory 采集和 policy 更新
+- 通过 controller / task worker / transport layer 管理环境部署
+- 被用于构建 AutoGLM
 
 **适用场景**：SWE-Agent、Computer Use、Deep Research Agent 训练。
 
@@ -515,8 +507,8 @@ class AgentRLRollout:
 | 框架 | 主要贡献者 | 核心机制 | 加速比 | 适用场景 |
 |------|-----------|---------|--------|---------|
 | **LlamaRL** | Meta | 完全去中心化 | 10.4× | 超大规模 Dense |
-| **AReaL** | 清华/蚂蚁 | Off-policy 容忍 | 2.77× | MoE 大模型 |
-| **AgentRL** | 工业联盟 | Agentic 长任务 | 3-5× | Agent 训练 |
+| **AReaL** | Ant Group 和清华 | 全异步 rollout + staleness-aware PPO | 2.77× | 大规模 LLM RL |
+| **AgentRL** | THUDM/智谱 | 多轮多任务 + 统一环境接口 | 论文未标注 | Agent 训练 |
 
 ## 36.6 MoE + RL 训练
 
@@ -886,8 +878,8 @@ def monitor_expert_balance(model):
 - [Rajaseharan et al. 2024 "SGLang"](https://arxiv.org/abs/2312.07104)
 - [Rajbhandari et al. 2020 "ZeRO: Memory Optimizations Toward Training Trillion Parameter Models"](https://arxiv.org/abs/1910.02054)
 - [Zhao et al. 2025 "LlamaRL: A Distributed Asynchronous Reinforcement Learning Framework"](https://arxiv.org/abs/2506.10910)
-- [Dou et al. 2025 "AReaL: Asynchronous RL"](https://arxiv.org/abs/2505.24298)
-- [AgentRL Team 2025 "AgentRL: A Scalable Agentic RL Framework"](https://arxiv.org/abs/2510.04206)
+- [Fu et al. 2025 "AReaL: A Large-Scale Asynchronous Reinforcement Learning System for Language Reasoning"](https://arxiv.org/abs/2505.24298)
+- [Zhang et al. 2025 "AgentRL: Scaling Agentic Reinforcement Learning with a Multi-Turn, Multi-Task Framework"](https://arxiv.org/abs/2510.04206)
 - [DeepSeek-AI 2024 "DeepSeek-V3 Technical Report"](https://arxiv.org/abs/2412.19437)
 - [DeepSeek-AI 2025 "DeepSeek-R1: Incentivizing Reasoning Capability via RL"](https://arxiv.org/abs/2501.12948)
 - [Qwen Team 2025 "Qwen3 Technical Report"](https://arxiv.org/abs/2505.09388)
