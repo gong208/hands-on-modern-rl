@@ -75,13 +75,13 @@ const isEnglishRoute = computed(
   () =>
     mobileRoutePath.value === '/en' || mobileRoutePath.value.startsWith('/en/')
 )
-const mobileCurrentLanguage = computed(() =>
+const currentLanguage = computed(() =>
   isEnglishRoute.value ? 'English' : '简体中文'
 )
-const mobileAlternateLanguage = computed(() =>
+const alternateLanguage = computed(() =>
   isEnglishRoute.value ? '简体中文' : 'English'
 )
-const mobileAlternateLanguageLink = computed(() => {
+const alternateLanguageLink = computed(() => {
   if (isEnglishRoute.value) {
     const zhPath = mobileRoutePath.value.replace(/^\/en(?=\/|$)/, '') || '/'
     return withBase(zhPath)
@@ -90,6 +90,19 @@ const mobileAlternateLanguageLink = computed(() => {
   const enPath =
     mobileRoutePath.value === '/' ? '/en/' : `/en${mobileRoutePath.value}`
   return withBase(enPath)
+})
+const alternateLanguageShort = computed(() =>
+  isEnglishRoute.value ? '中' : 'EN'
+)
+const alternateLanguageAriaLabel = computed(() =>
+  isEnglishRoute.value ? '切换到简体中文' : 'Switch to English'
+)
+const languageToggleAriaCurrent = computed(() => {
+  const isOnAlternateRoot =
+    alternateLanguageLink.value === withBase('/') ||
+    alternateLanguageLink.value === withBase('/en/') ||
+    alternateLanguageLink.value === withBase('/en')
+  return isOnAlternateRoot ? null : 'true'
 })
 const supportButtonLabel = computed(() =>
   isEnglishRoute.value ? 'Give the creator a like' : '给制作者一个赞吧'
@@ -955,6 +968,18 @@ watch(
   <DefaultTheme.Layout>
     <template v-if="showDocChrome" #nav-bar-content-after>
       <div class="ct-nav-tools">
+        <a
+          class="ct-nav-tool-button ct-language-toggle"
+          :href="alternateLanguageLink"
+          :aria-label="alternateLanguageAriaLabel"
+          :title="alternateLanguageAriaLabel"
+          :aria-current="languageToggleAriaCurrent"
+        >
+          <span class="ct-language-toggle-text">
+            {{ alternateLanguageShort }}
+          </span>
+        </a>
+
         <PopoverRoot v-model:open="readingToolsOpen">
           <PopoverTrigger as-child>
             <button
@@ -1243,13 +1268,10 @@ watch(
         <div class="ct-mobile-language-title">切换语言</div>
         <div class="ct-mobile-language-options">
           <span class="ct-mobile-language-current">
-            {{ mobileCurrentLanguage }}
+            {{ currentLanguage }}
           </span>
-          <a
-            class="ct-mobile-language-link"
-            :href="mobileAlternateLanguageLink"
-          >
-            {{ mobileAlternateLanguage }}
+          <a class="ct-mobile-language-link" :href="alternateLanguageLink">
+            {{ alternateLanguage }}
           </a>
         </div>
       </div>
@@ -1398,6 +1420,38 @@ watch(
 
 .VPNavBar .appearance {
   display: none;
+}
+
+/* Hide VitePress's default language dropdowns on all viewports.
+   Replaced by .ct-language-toggle above, which is a direct link to the
+   other locale. VPFlyout's hover-to-open + click-to-toggle combo is
+   unreliable on touch devices and on touchscreen laptops, where the
+   menu briefly flashes open on mouseenter then immediately closes on
+   click (open = !open flips back to false). */
+.VPNavBar .VPNavBarTranslations,
+.VPNavScreen .VPNavScreenTranslations {
+  display: none !important;
+}
+
+.ct-language-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  color: rgba(29, 29, 31, 0.62);
+}
+
+.ct-language-toggle:hover,
+.ct-language-toggle:focus-visible {
+  color: rgba(29, 29, 31, 0.82);
+  border-color: rgba(0, 0, 0, 0.05);
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .ct-nav-tool-button {
