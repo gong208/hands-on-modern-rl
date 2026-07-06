@@ -1,0 +1,5 @@
+# veRL / Hydra / wandb run artifacts created in the working dir
+outputs/
+wandb/
+__pycache__/
+results/
